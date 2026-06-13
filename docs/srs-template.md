@@ -117,7 +117,7 @@ stateDiagram-v2
 
 #### 2.2.2 Deskripsi Skenario Use Case Naratif
 
-Berikut adalah deskripsi naratif untuk 3 Use Case kritis sistem:
+Berikut adalah deskripsi naratif untuk 3 Use Case kritis sistem. Setiap use case divisualisasikan menggunakan **Mermaid.js flowchart** untuk memperjelas alur interaksi aktor dengan sistem.
 
 ---
 
@@ -145,59 +145,67 @@ Use case ini memungkinkan pembeli atau sales dealer untuk mendapatkan estimasi h
 1. Sistem menampilkan pesan error dan saran perbaikan
 2. Log error tersimpan untuk debugging
 
-**Alur Normal (Basic Flow):**
+**Alur Normal (Basic Flow) - Mermaid Flowchart:**
 
-| Step | Aktor | Sistem | Deskripsi |
-|------|-------|--------|----------|
-| 1 | Pembeli | | Memilih menu "Simulasi Harga" |
-| 2 | | Sistem | Menampilkan form input: Jenis kendaraan (Baru/Bekas), Tipe, Merk, Model, Tahun |
-| 3 | Pembeli | | Mengisi data kendaraan dan memilih metode pembayaran (Tunai/Kredit) |
-| 4 | | Sistem | Meng-query database untuk mengambil NJKB dan harga dasar |
-| 5 | | Sistem | Jika kendaraan Bekas: Query API Samsat untuk validasi dan deteksi pajak progresif |
-| 6 | | Sistem | Hitung DPP PPN = 11/12 × NJKB |
-| 7 | | Sistem | Hitung PPN = 12% × DPP PPN |
-| 8 | | Sistem | Hitung PKB Pokok = Tarif × NJKB |
-| 9 | | Sistem | Hitung Opsen PKB = 66% × PKB Pokok |
-| 10 | | Sistem | Hitung BBNKB Pokok = 12% × NJKB |
-| 11 | | Sistem | Hitung Opsen BBNKB = 66% × BBNKB Pokok |
-| 12 | | Sistem | Hitung SWDKLLJ, PNBP STNK, TNKB, BPKB |
-| 13 | | Sistem | Jika metode Kredit: Hitung DP minimum berdasarkan NPF leasing dan angsuran |
-| 14 | | Sistem | Aggregate seluruh komponen dan tampilkan rincian harga |
-| 15 | Pembeli | | Menerima estimasi harga |
-| 16 | | Sistem | Simpan simulasi ke history database |
+```mermaid
+flowchart TD
+    subgraph Alur_Normal["ALUR NORMAL: Estimasi Harga On-The-Road"]
+        A1["👤 Pembeli:\nPilih Menu Simulasi Harga"] --> A2["💻 Sistem:\nTampilkan Form Input\n(Jenis, Tipe, Merk, Model, Tahun)"]
+        A2 --> A3["👤 Pembeli:\nInput Data Kendaraan\n& Metode Pembayaran"]
+        A3 --> A4{"💻 Sistem:\nQuery Database\nNJKB & Harga Dasar"}
+        A4 --> A5{"💻 Sistem:\nJenis Kendaraan\nBEKAS?"}
+        A5 -->|Ya| A6["💻 Sistem:\nQuery API Samsat/SIGNAL\nValidasi & Pajak Progresif"]
+        A5 -->|Tidak| A7["💻 Sistem:\nLanjut ke Hitung Pajak"]
+        A6 --> A8{"💻 Sistem:\nAPI Samsat\nSuccess?"}
+        A8 -->|Gagal| A9["💻 Sistem:\nTampilkan Warning\n& Gunakan Tarif Default"]
+        A8 -->|Sukses| A10["💻 Sistem:\nDeteksi Pajak Progresif\n& Set Tarif"]
+        A9 --> A7
+        A10 --> A7
+        A7 --> B1["💻 Sistem:\nHitung DPP PPN = 11/12 × NJKB"]
+        B1 --> B2["💻 Sistem:\nHitung PPN = 12% × DPP PPN"]
+        B2 --> B3{"💻 Sistem:\nKendaraan KBLBB\nTKDN ≥ 40%?"}
+        B3 -->|Ya| B4["💻 Sistem:\nPPN Efektif = 2% × NJKB\n(Insentif PPN DTP)"]
+        B3 -->|Tidak| B5["💻 Sistem:\nPPN Efektif = 11% × NJKB"]
+        B4 --> B6
+        B5 --> B6["💻 Sistem:\nHitung PKB = Tarif × NJKB"]
+        B6 --> B7["💻 Sistem:\nHitung Opsen PKB = 66% × PKB"]
+        B7 --> B8["💻 Sistem:\nHitung BBNKB = 12% × NJKB"]
+        B8 --> B9["💻 Sistem:\nHitung Opsen BBNKB = 66% × BBNKB"]
+        B9 --> B10["💻 Sistem:\nHitung PNBP\nSWDKLLJ, STNK, TNKB, BPKB"]
+        B10 --> B11{"💻 Sistem:\nMetode\nKREDIT?"}
+        B11 -->|Ya| B12["💻 Sistem:\nHitung DP Min\nBerdasarkan NPF Leasing"]
+        B11 -->|Tidak| B13["💻 Sistem:\nLanjut ke Aggregate"]
+        B12 --> B14["💻 Sistem:\nHitung Angsuran & Simulasi"]
+        B14 --> B15["💻 Sistem:\nAggregate Semua Komponen"]
+        B13 --> B15
+        B15 --> B16["💻 Sistem:\nTampilkan Rincian Harga\nOn-The-Road"]
+        B16 --> B17["👤 Pembeli:\nTerima Estimasi Harga"]
+        B17 --> B18["💻 Sistem:\nSimpan ke History Database"]
+        B18 --> B19["✅ END: Estimasi Selesai"]
+    end
+```
 
-**Alur Alternatif / Pengecualian (Alternative/Exception Flows):**
+**Alur Alternatif / Pengecualian (Alternative/Exception Flows) - Mermaid Flowchart:**
 
-**A1. API Samsat Timeout/Down**
-| Step | Aksi |
-|------|------|
-| 5a | Sistem gagal koneksi ke API Samsat |
-| 5b | Sistem menampilkan: "Verifikasi data kendaraan sementara unavailable. Estimasi pajak progresif menggunakan tarif dasar (2%). Validasi final akan dilakukan saat pembayaran." |
-| 5c | Sistem tetap melanjutkan kalkulasi dengan tarif default |
-| 5d | Kembali ke Step 6 |
-
-**A2. Kendaraan KBLBB (Insentif PPN DTP)**
-| Step | Aksi |
-|------|------|
-| 7a | Sistem mendeteksi TKDN ≥ 40% dan jenis = BEV |
-| 7b | Sistem menghitung PPN efektif = 2% × NJKB (bukan 11%) |
-| 7c | Sistem menampilkan badge "Mendapat insentif PPN DTP" |
-| 7d | Kembali ke Step 8 |
-
-**A3. Pajak Progresif Terdeteksi**
-| Step | Aksi |
-|------|------|
-| 5c | API Samsat mengembalikan: kepemilikan kendaraan sejenis = 2 |
-| 5d | Sistem set tarif PKB = 3% (bukan 2%) |
-| 5e | Sistem tampilkan notifikasi: "Berdasarkan data Samsat, Anda memiliki 1 kendaraan sejenis. Tarif PKB berlaku: 3%." |
-| 5f | Kembali ke Step 6 |
-
-**A4. Validasi Input Gagal**
-| Step | Aksi |
-|------|------|
-| 3a | Pembeli memilih kombinasi kendaraan yang tidak valid |
-| 3b | Sistem tampilkan pesan error spesifik |
-| 3c | Kembali ke Step 3 |
+```mermaid
+flowchart TD
+    subgraph Exception_Flows["ALUR PENGECUALIAN: UC-01"]
+        E1{"⚠️ A1: API Samsat\nTimeout/Down?"}
+        E1 -->|Ya| E2["💻 Sistem:\nTampilkan Warning Message\n'Verifikasi unavailable,\ntarif default 2%'"]
+        E2 --> E3["💻 Sistem:\nGunakan Tarif PKB Default"]
+        E1 -->|Tidak| E4{"⚠️ A2: KBLBB\nInsentif PPN DTP?"}
+        E4 -->|Ya| E5["💻 Sistem:\nApply PPN Efektif 2%\nTampilkan Badge Insentif"]
+        E4 -->|Tidak| E6{"⚠️ A3: Pajak Progresif\nTerdeteksi?"}
+        E6 -->|Ya| E7["💻 Sistem:\nSet Tarif PKB sesuai\nKepemilikan"]
+        E6 -->|Tidak| E8["⚠️ A4: Input\nTidak Valid?"}
+        E7 --> E8
+        E5 --> E9["✅ Lanjut ke Step Berikutnya"]
+        E3 --> E9
+        E8 -->|Ya| E10["💻 Sistem:\nTampilkan Error\nSpesifik"]
+        E8 -->|Tidak| E9
+        E10 --> E11["🔄 Kembali ke Form Input"]
+    end
+```
 
 ---
 
@@ -227,68 +235,79 @@ Use case ini memungkinkan pembeli untuk mengajukan pembiayaan kredit melalui sis
 2. Error message ditampilkan dengan saran perbaikan
 3. Log untuk troubleshooting tersimpan
 
-**Alur Normal (Basic Flow):**
+**Alur Normal (Basic Flow) - Mermaid Flowchart:**
 
-| Step | Aktor | Sistem | Deskripsi |
-|------|-------|--------|----------|
-| 1 | Pembeli | | Memilih menu "Ajukan Kredit" pada kendaraan booking |
-| 2 | | Sistem | Menampilkan form pengajuan: Pilihan leasing partner, tenor, DP |
-| 3 | Pembeli | | Memilih leasing partner dan mengisi parameter kredit |
-| 4 | | Sistem | Hitung DP minimum berdasarkan NPF leasing |
-| 5 | | Sistem | Hitung angsuran dan tampilkan simulasi |
-| 6 | Pembeli | | Konfirmasi parameter dan klik "Ajukan" |
-| 7 | | Sistem | Generate submission ID |
-| 8 | | Sistem | Request API SLIK OJK dengan NIK pembeli |
-| 9 | | Sistem | Parse response iDeb dan extract kolektibilitas |
-| 10 | | Sistem | Jika SLIK data insufficient: Request API PEFINDO |
-| 11 | | Sistem | Jalankan credit scoring algorithm |
-| 12 | | Sistem | Generate preliminary decision (Approve/Reject/Pending Review) |
-| 13 | | Sistem | Serialize payload aplikasi kredit |
-| 14 | | Sistem | Publish ke message queue ESB (RabbitMQ/Kafka) |
-| 15 | | Sistem | Receive ACK dari ESB |
-| 16 | | Sistem | Save aplikasi ke database dengan status PENDING |
-| 17 | | Sistem | Send notification ke Surveyor |
-| 18 | | Sistem | Display confirmation ke pembeli |
+```mermaid
+flowchart TD
+    subgraph Alur_UC03["ALUR NORMAL: Pengajuan Kredit SLIK"]
+        A1["👤 Pembeli:\nPilih Menu Ajukan Kredit"] --> A2{"💻 Sistem:\nCek Duplikat?\n(NIK + kendaraan_id)"}
+        A2 -->|Sudah Ada| A3["❌ END: Tampilkan Error\n'Anda sudah memiliki\npengajuan aktif'"]
+        A2 -->|Tidak Ada| A4["💻 Sistem:\nTampilkan Form\nLeasing, Tenor, DP"]
+        A4 --> A5["👤 Pembeli:\nPilih Leasing &\nParameter Kredit"]
+        A5 --> A6["💻 Sistem:\nHitung DP Min\nBerdasarkan NPF Leasing"]
+        A6 --> A7["💻 Sistem:\nHitung Angsuran\n& Tampilkan Simulasi"]
+        A7 --> A8["👤 Pembeli:\nKonfirmasi &\nKlik 'Ajukan'"]
+        A8 --> A9["💻 Sistem:\nGenerate Submission ID"]
+        A9 --> A10["💻 Sistem:\nRequest API SLIK OJK\ndengan NIK"]
+        A10 --> A11{"💻 Sistem:\nAPI SLIK\nRespons?"}
+        A11 -->|Timeout| A12["💻 Sistem:\nRetry (1s, 2s, 4s)\nMax 3x"]
+        A12 --> A13{"💻 Sistem:\nStill Failed?"}
+        A13 -->|Ya| A14["💻 Sistem:\nFlag: Pending iDeb\nSchedule Retry"]
+        A13 -->|Tidak| A15["💻 Sistem:\nParse iDeb Data\nExtract Kolektibilitas"]
+        A14 --> A15
+        A11 -->|Sukses| A15
+        A15 --> A16{"💻 Sistem:\nData SLIK\nSufficient?"}
+        A16 -->|Kurang| A17["💻 Sistem:\nRequest API PEFINDO"]
+        A16 -->|Cukup| A18["💻 Sistem:\nJalankan Credit\nScoring Algorithm"]
+        A17 --> A18
+        A18 --> A19{"💻 Sistem:\nKolektibilitas\n= 5 (Macet)?"}
+        A19 -->|Ya| A20["❌ Sistem:\nPreliminary = REJECTED\nTampilkan Alasan"]
+        A19 -->|Tidak| A21["💻 Sistem:\nGenerate Decision\n(Approve/Reject/Pending)"]
+        A20 --> A22["💻 Sistem:\nOffer: Hubungi\nSurveyor Manual"]
+        A20 --> A23["✅ END: Aplikasi Ditolak"]
+        A21 --> A24["💻 Sistem:\nSerialize Payload\nKredit"]
+        A24 --> A25["💻 Sistem:\nPublish ke ESB Queue\n(RabbitMQ/Kafka)"]
+        A25 --> A26{"💻 Sistem:\nESB ACK\nReceived?"}
+        A26 -->|Gagal| A27["💻 Sistem:\nSave Status\nQUEUED_LOCALLY"]
+        A26 -->|Sukses| A28["💻 Sistem:\nSave ke DB\nStatus = PENDING"]
+        A27 --> A28
+        A28 --> A29["💻 Sistem:\nSend Notification\nke Surveyor"]
+        A29 --> A30["💻 Sistem:\nDisplay Confirmation\nke Pembeli"]
+        A30 --> A31["✅ END: Aplikasi\nBerhasil Diajukan"]
+    end
+```
 
-**Alur Alternatif / Pengecualian (Alternative/Exception Flows):**
+**Alur Alternatif / Pengecualian (Alternative/Exception Flows) - Mermaid Flowchart:**
 
-**A1. API SLIK Timeout/Down**
-| Step | Aksi |
-|------|------|
-| 8a | Koneksi timeout setelah 30 detik |
-| 8b | Sistem retry dengan exponential backoff (1s, 2s, 4s) |
-| 8c | Jika masih gagal setelah 3 retry: |
-| 8d | Sistem tidak blocking submission |
-| 8e | Sistem flag aplikasi sebagai "Pending iDeb Verification" |
-| 8f | Sistem schedule background job untuk retry later |
-| 8g | Lanjut ke Step 11 dengan null data iDeb |
-
-**A2. Credit Scoring Automatic Rejection**
-| Step | Aksi |
-|------|------|
-| 11a | Kolektibilitas = 5 (macet) |
-| 11b | Sistem set preliminary decision = REJECTED |
-| 11c | Sistem tidak publish ke ESB |
-| 11d | Sistem tampilkan alasan penolakan: "Kolektibilitas menunjukkan riwayat pembayaran tidak baik" |
-| 11e | Sistem offer opsi: "Hubungi surveyor untuk review manual" |
-| 11f | End use case |
-
-**A3. ESB Queue Full / Connection Failed**
-| Step | Aksi |
-|------|------|
-| 14a | Gagal publish ke queue setelah 3 retry |
-| 14b | Sistem simpan aplikasi dengan status "QUEUED_LOCALLY" |
-| 14c | Sistem schedule job untuk retry publish |
-| 14d | Sistem tampilkan: "Pengajuan berhasil disimpan. Penyerahan ke leasing akan diproses saat sistem tersedia." |
-| 14e | Lanjut ke Step 16 |
-
-**A4. Duplicate Submission Prevention**
-| Step | Aksi |
-|------|------|
-| 2a | Sistem deteksi NIK + kendaraan_id sudah ada aplikasi PENDING/APPROVED |
-| 2b | Sistem tampilkan: "Anda sudah memiliki pengajuan aktif untuk kendaraan ini." |
-| 2c | Sistem offer opsi: "Lihat pengajuan existing" atau "Ajukan dengan kendaraan berbeda" |
-| 2d | End use case |
+```mermaid
+flowchart TD
+    subgraph Exception_UC03["ALUR PENGECUALIAN: UC-03"]
+        E1{"⚠️ A1: API SLIK\nTimeout/Down?"}
+        E1 -->|Ya| E2["💻 Sistem:\nRetry Exponential Backoff\n1s → 2s → 4s"]
+        E1 -->|Tidak| E3["✅ Lanjut ke Step 9\nData iDeb Available"]
+        E2 --> E4{"💻 Sistem:\n3x Retry\nFailed?"}
+        E4 -->|Ya| E5["💻 Sistem:\nFlag 'Pending iDeb'\nSchedule Background Retry"]
+        E4 -->|Tidak| E3
+        E5 --> E6["✅ Lanjut ke Credit Scoring\ndengan Null iDeb"]
+        
+        E7{"⚠️ A2: Kolektibilitas\n= 5 (Macet)?"}
+        E7 -->|Ya| E8["💻 Sistem:\nSet REJECTED\nNo ESB Publish"]
+        E7 -->|Tidak| E9["✅ Lanjut ke\nDecision Generation"]
+        E8 --> E10["💻 Sistem:\nDisplay Error\n'Riwayat Pembayaran\nTidak Baik'"]
+        E8 --> E11["💻 Sistem:\nOffer: Review\nManual oleh Surveyor"]
+        E10 --> E12["✅ END"]
+        
+        E13{"⚠️ A3: ESB Queue\nConnection Failed?"}
+        E13 -->|Ya| E14["💻 Sistem:\nSave 'QUEUED_LOCALLY'\nSchedule Retry Job"]
+        E13 -->|Tidak| E15["✅ Lanjut ke\nSave Database"]
+        E14 --> E15
+        
+        E16{"⚠️ A4: Duplicate\nSubmission?"}
+        E16 -->|Ya| E17["💻 Sistem:\nDisplay Error\n'Anda sudah memiliki\npengajuan aktif'"]
+        E16 -->|Tidak| E18["✅ Lanjut ke\nForm Pengajuan"]
+        E17 --> E19["✅ END"]
+    end
+```
 
 ---
 
@@ -317,91 +336,106 @@ Use case ini memungkinkan notaris rekanan untuk mengelola proses pendaftaran jam
 2. Warning notification jika deadline < 7 hari
 3. Auto-blocking jika deadline passed
 
-**Alur Normal (Basic Flow):**
+**Alur Normal (Basic Flow) - Mermaid Flowchart:**
 
-| Step | Aktor | Sistem | Deskripsi |
-|------|-------|--------|----------|
-| 1 | Notaris | | Login ke portal notaris |
-| 2 | | Sistem | Tampilkan dashboard fidusia pending |
-| 3 | Notaris | | Pilih aplikasi kredit yang akan diproses |
-| 4 | | Sistem | Generate draft akta fidusia dari template |
-| 5 | Notaris | | Review dan finalize draft akta |
-| 6 | | Sistem | Generate nomor akta dan set tanggal_akta = today |
-| 7 | | Sistem | Calculate batas_pendaftaran = tanggal_akta + 30 hari |
-| 8 | | Sistem | Generate countdown warning schedule (H-25, H-28, H-29) |
-| 9 | Notaris | | Sign akta secara elektronik (via TTE Privy/VIDA) |
-| 10 | | Sistem | Store signed akta ke document vault |
-| 11 | Notaris | | Submit pendaftaran ke API Ditjen AHU |
-| 12 | | Sistem | Generate kode billing PNBP |
-| 13 | | Sistem | Display instruksi pembayaran ke notaris |
-| 14 | Notaris | | Lakukan pembayaran PNBP via payment gateway |
-| 15 | | Sistem | Confirm payment dan update status_bayar = PAID |
-| 16 | | Sistem | AHU memproses dan return status |
-| 17 | | Sistem | Jika APPROVED: Download sertifikat fidusia |
-| 18 | | Sistem | Store sertifikat ke document vault |
-| 19 | | Sistem | Update status fidusia = APPROVED |
-| 20 | | Sistem | Update status aplikasi_kredit = FIDUSIA_COMPLETE |
-| 21 | | Sistem | Send notification ke leasing dan dealer |
-| 22 | | Sistem | Trigger pencairan dana ke dealer |
+```mermaid
+flowchart TD
+    subgraph Alur_UC09["ALUR NORMAL: Pendaftaran Jaminan Fidusia"]
+        A1["👨‍⚖️ Notaris:\nLogin Portal Notaris"] --> A2["💻 Sistem:\nTampilkan Dashboard\nFidusia Pending"]
+        A2 --> A3["👨‍⚖️ Notaris:\nPilih Aplikasi Kredit\nyang Akan Diproses"]
+        A3 --> A4["💻 Sistem:\nGenerate Draft Akta\nFidusia dari Template"]
+        A4 --> A5["👨‍⚖️ Notaris:\nReview & Finalize\nDraft Akta"]
+        A5 --> A6["💻 Sistem:\nGenerate Nomor Akta\ntanggal_akta = TODAY"]
+        A6 --> A7["💻 Sistem:\nCalculate batas_pendaftaran\n= tanggal_akta + 30 hari"]
+        A7 --> A8{"💻 Sistem:\nDeadline\nApproaching?"}
+        A8 -->|Yes| A9["💻 Sistem:\nGenerate Countdown\nWarning Schedule"]
+        A8 -->|No| A10["👨‍⚖️ Notaris:\nSign Akta via TTE\n(Privy/VIDA)"]
+        A9 --> A10
+        A10 --> A11["💻 Sistem:\nStore Signed Akta\nke Document Vault"]
+        A11 --> A12["👨‍⚖️ Notaris:\nSubmit ke API\nDitjen AHU"]
+        A12 --> A13["💻 Sistem:\nGenerate Kode Billing\nPNBP"]
+        A13 --> A14["💻 Sistem:\nDisplay Instruksi\nPembayaran"]
+        A14 --> A15["👨‍⚖️ Notaris:\nBayar PNBP via\nPayment Gateway"]
+        A15 --> A16["💻 Sistem:\nConfirm Payment\nstatus_bayar = PAID"]
+        A16 --> A17["💻 Sistem:\nAHU Proses\n& Return Status"]
+        A17 --> A18{"💻 Sistem:\nAHU\nResponse?"}
+        A18 -->|APPROVED| A19["💻 Sistem:\nDownload Sertifikat\nFidusia"]
+        A18 -->|REJECTED| A20["❌ Sistem:\nUpdate status\nFIDUSIA = REJECTED"]
+        A19 --> A21["💻 Sistem:\nStore Sertifikat\nke Document Vault"]
+        A21 --> A22["💻 Sistem:\nUpdate status fidusia\n= APPROVED"]
+        A22 --> A23["💻 Sistem:\nUpdate aplikasi_kredit\n= FIDUSIA_COMPLETE"]
+        A23 --> A24["💻 Sistem:\nSend Notification\nke Leasing & Dealer"]
+        A24 --> A25["💻 Sistem:\nTrigger Pencairan\nDana ke Dealer"]
+        A25 --> A26["✅ END: Fidusia\nBerhasil Terdaftar"]
+        A20 --> A27["💻 Sistem:\nDisplay Reason\nRejection"]
+        A27 --> A28["👨‍⚖️ Notaris:\nPerbaiki Dokumen"]
+        A28 --> A29{"💻 Sistem:\nWithin Deadline?"}
+        A29 -->|Yes| A12
+        A29 -->|No| A30["❌ Sistem:\nBLOCK - Deadline\nExceeded"]
+        A30 --> A31["✅ END: Fidusia\nEXPIRED"]
+    end
+```
 
-**Alur Alternatif / Pengecualian (Alternative/Exception Flows):**
+**Alur Alternatif / Pengecualian (Alternative/Exception Flows) - Mermaid Flowchart:**
 
-**A1. Countdown Warning - H-25 (7 Hari Sebelum Deadline)**
-| Step | Aksi |
-|------|------|
-| 8a | Sistem deteksi today = H-25 dari batas_pendaftaran |
-| 8b | Sistem kirim email/WhatsApp warning ke notaris |
-| 8c | Pesan: "Pendaftaran fidusia untuk aplikasi [ID] akan expire dalam 7 hari. Segera selesaikan proses." |
-| 8d | Lanjut ke Step 9 |
+```mermaid
+flowchart TD
+    subgraph Exception_UC09["ALUR PENGECUALIAN: UC-09 Fidusia"]
+        E1{"⚠️ A1: Countdown\nH-25 (7 Hari)?"}
+        E1 -->|Ya| E2["💻 Sistem:\nKirim Warning\nEmail/WhatsApp"]
+        E1 -->|Tidak| E3{"⚠️ A2: Countdown\nH-28 (2 Hari)?"}
+        E2 --> E3
+        
+        E3 -->|Ya| E4["💻 Sistem:\nKirim URGENT Alert\n+ Escalate ke Leasing"]
+        E3 -->|Tidak| E5{"⚠️ A3: Countdown\nH-29 (1 Hari)?"}
+        E4 --> E5
+        
+        E5 -->|Ya| E6["💻 Sistem:\nCRITICAL Alert\n+ Blokir Aplikasi Lain"]
+        E5 -->|Tidak| E7["✅ Lanjut ke\nSubmit AHU"]
+        E6 --> E7
+        
+        E8{"⚠️ A4: Deadline\nExceeded?"}
+        E8 -->|Ya| E9["❌ Sistem:\nBLOCK Submission\n'Tidak dapat dilakukan,\n30 hari terlewat'"]
+        E8 -->|Tidak| E10["✅ Lanjut ke\nSubmit Normal"]
+        E9 --> E11["💻 Sistem:\nSet status\nFIDUSIA = EXPIRED"]
+        E9 --> E12["💻 Sistem:\nNotify Leasing:\nCancel/Re-submit"]
+        E11 --> E13["✅ END"]
+        E12 --> E13
+        
+        E14{"⚠️ A5: AHU\nRejection?"}
+        E14 -->|Ya| E15["💻 Sistem:\nDisplay Reason\nRejection"]
+        E14 -->|Tidak| E16["✅ Lanjut ke\nDownload Sertifikat"]
+        E15 --> E17["👨‍⚖️ Notaris:\nPerbaiki Dokumen"]
+        E17 --> E18{"💻 Sistem:\nWithin\nDeadline?"}
+        E18 -->|Ya| E19["🔄 Kembali ke\nSubmit AHU"]
+        E18 -->|Tidak| E20["❌ Trigger A4\nDeadline Exceeded"]
+        E19 --> E14
+        
+        E21{"⚠️ A6: Payment\nTimeout 24 Jam?"}
+        E21 -->|Ya| E22["💻 Sistem:\nKirim Reminder\nke Notaris"]
+        E21 -->|Tidak| E23["✅ Lanjut ke\nConfirm Payment"]
+        E22 --> E24{"💻 Sistem:\n48 Jam\nNo Action?"}
+        E24 -->|Ya| E25["💻 Sistem:\nCancel Kode Billing\n& Generate New"]
+        E24 -->|Tidak| E23
+        E25 --> E26["🔄 Kembali ke\nGenerate Kode Billing"]
+    end
+```
 
-**A2. Countdown Warning - H-28 (2 Hari Sebelum Deadline)**
-| Step | Aksi |
-|------|------|
-| 8a | Sistem deteksi today = H-28 dari batas_pendaftaran |
-| 8b | Sistem kirim urgent notification |
-| 8c | Pesan: "URGENT: Pendaftaran fidusia expire dalam 2 hari! Mohon segera selesaikan." |
-| 8d | Sistem escalate ke account manager leasing |
-| 8e | Lanjut ke Step 9 |
+**Timeline Countdown Warning:**
 
-**A3. Countdown Warning - H-29 (1 Hari Sebelum Deadline)**
-| Step | Aksi |
-|------|------|
-| 8a | Sistem deteksi today = H-29 dari batas_pendaftaran |
-| 8b | Sistem blokir notaris dari menangani aplikasi lain |
-| 8c | Sistem kirim critical alert ke seluruh stakeholder |
-| 8d | Pesan: "CRITICAL: Pendaftaran fidusia expire BESOK! Segera selesaikan atau aplikasi akan kadaluarsa." |
-| 8e | Lanjut ke Step 9 |
-
-**A4. Deadline Exceeded - Auto-Blocking**
-| Step | Aksi |
-|------|------|
-| 10a | Notaris mencoba submit setelah batas_pendaftaran |
-| 10b | Sistem cek: today > batas_pendaftaran |
-| 10c | Sistem BLOCK submission |
-| 10d | Sistem tampilkan: "Pendaftaran fidusia tidak dapat dilakukan. Batas waktu 30 hari kalender telah terlewat sesuai PP 21/2015." |
-| 10e | Sistem set status fidusia = EXPIRED |
-| 10f | Sistem notify leasing: aplikasi kredit perlu di-cancel atau ajukan ulang |
-| 10g | End use case |
-
-**A5. AHU Rejection (Dokumen Tidak Lengkap)**
-| Step | Aksi |
-|------|------|
-| 16a | AHU return status REJECTED dengan reason |
-| 16b | Sistem update status fidusia = REJECTED |
-| 16c | Sistem display reason rejection ke notaris |
-| 16d | Notaris memperbaiki dokumen sesuai reason |
-| 16e | Notaris resubmit (kembali ke Step 11) |
-| 16f | Jika resubmit setelah deadline: trigger A4 |
-
-**A6. Payment Timeout**
-| Step | Aksi |
-|------|------|
-| 14a | Pembayaran tidak confirmed dalam 24 jam |
-| 14b | Sistem kirim reminder ke notaris |
-| 14c | Jika tidak ada action dalam 48 jam: |
-| 14d | Sistem cancel kode billing dan generate new |
-| 14e | Notaris harus generate ulang di Step 12 |
-| 14f | Kode billing lama expire secara otomatis oleh sistem AHU |
+```mermaid
+gantt
+    title Timeline Pendaftaran Fidusia (30 Hari)
+    dateFormat X
+    axisFormat %d
+    
+    section Deadline
+    Batas Akhir (H+30)        :0, 30
+    Warning H-25 (7 hari)     :milestone, 23, 0
+    Warning H-28 (2 hari)     :milestone, 28, 0
+    Warning H-29 (1 hari)     :milestone, 29, 0
+    BLOCKED (H+30+)          :0, 32
+```
 
 ---
 
