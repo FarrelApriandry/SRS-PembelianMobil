@@ -1,6 +1,397 @@
-Analisis Sistem Transaksi, Struktur Fiskal, dan Manajemen Dokumen Kendaraan Bermotor di Indonesia: Panduan Komprehensif Penyusunan Dokumen Spesifikasi Kebutuhan Perangkat Lunak (SRS)Analisis Regulasi Fiskal, Struktur Pajak, dan Implikasi Perhitungan Transaksi Kendaraan BaruPembelian kendaraan bermotor roda empat baru di Indonesia melibatkan struktur perpajakan berlapis yang menggabungkan instrumen pajak pemerintah pusat dan pemerintah daerah. Berdasarkan Undang-Undang Nomor 1 Tahun 2022 tentang Hubungan Keuangan antara Pemerintah Pusat dan Pemerintahan Daerah (UU HKPD) serta implementasi penyesuaian tarif Pajak Pertambahan Nilai (PPN) terbaru, pembeli dibebankan setidaknya tujuh komponen biaya fiskal. Pemahaman mendalam mengenai variabel-variabel ini sangat krusial dalam menyusun modul kalkulasi biaya otomatis (pricing engine) pada dokumen Spesifikasi Kebutuhan Perangkat Lunak (SRS) agar tidak terjadi selisih pencatatan keuangan.Penetapan nilai pajak kendaraan mengacu pada Nilai Jual Kendaraan Bermotor (NJKB), yaitu nilai standar yang ditetapkan oleh Dinas Pendapatan Daerah (Dispenda) melalui data keagenan dari Agen Pemegang Merek (APM), bukan berdasarkan harga pasar riil atau harga transaksi ritel. Dasar Pengenaan Pajak (DPP) untuk PPN dihitung dengan menggunakan mekanisme Nilai Lain :$$\text{DPP PPN Nilai Lain} = \frac{11}{12} \times \text{NJKB}$$Sesuai dengan ketentuan tarif PPN sebesar 12% yang diatur dalam Peraturan Menteri Keuangan Nomor 131/2024, nilai PPN Terutang diformulasikan sebagai berikut :$$\text{PPN Terutang} = 12\% \times \text{DPP PPN Nilai Lain}$$$$\text{PPN Terutang} = 12\% \times \left( \frac{11}{12} \times \text{NJKB} \right) = 11\% \times \text{NJKB}$$Di tingkat daerah, UU HKPD memperkenalkan sistem opsen untuk menyederhanakan birokrasi dan memastikan pembagian hasil yang lebih adil bagi kabupaten/kota. Pajak Kendaraan Bermotor (PKB) dan Bea Balik Nama Kendaraan Bermotor (BBNKB) dikenakan biaya tambahan berupa Opsen PKB dan Opsen BBNKB dengan tarif sebesar 66% dari nilai pajak pokok yang terutang. Perhitungan pajak daerah terutang dirumuskan sebagai berikut :$$\text{Total PKB} = \text{PKB Pokok} + \text{Opsen PKB} = \text{PKB Pokok} + (66\% \times \text{PKB Pokok})$$$$\text{Total BBNKB} = \text{BBNKB Pokok} + \text{Opsen BBNKB} = \text{BBNKB Pokok} + (66\% \times \text{BBNKB Pokok})$$Selain itu, terdapat biaya administrasi wajib yang dikelola oleh Kepolisian Negara Republik Indonesia (Polri) sebagai Penerimaan Negara Bukan Pajak (PNBP) serta Sumbangan Wajib Dana Kecelakaan Lalu Lintas Jalan (SWDKLLJ) yang dikelola oleh Jasa Raharja.Komponen Biaya / PajakTarif / Ketentuan DasarDasar Pengenaan Pajak (DPP)Otoritas PenerimaPPN12% (Mekanisme Nilai Lain) $\frac{11}{12} \times \text{NJKB}$ Pemerintah Pusat (DJP) PPnBMVariatif (Contoh: 15%) DPP Nilai Lain Pemerintah Pusat (DJP) PKB (Pokok)1,2% s.d. 2% (Kepemilikan pertama) NJKB x Bobot Kerusakan Jalan Pemerintah Provinsi Opsen PKB66% dari PKB Pokok PKB Pokok Terutang Pemerintah Kabupaten/Kota BBNKB (Pokok)Maksimal 12% (Penyerahan Pertama) NJKB Pemerintah Provinsi Opsen BBNKB66% dari BBNKB Pokok BBNKB Pokok Terutang Pemerintah Kabupaten/Kota SWDKLLJRp143.000 s.d. Rp150.000 Flat berdasarkan golongan kendaraan Jasa Raharja Penerbitan STNKRp200.000 Per penerbitan dokumen baru POLRI (PNBP) Penerbitan TNKBRp100.000 Per penerbitan pelat nomor baru POLRI (PNBP) Penerbitan BPKBRp375.000 Per penerbitan buku baru POLRI (PNBP) Untuk memberikan gambaran komparatif yang presisi dalam pemodelan kalkulator sistem, berikut disajikan dua simulasi perhitungan berdasarkan tingkat harga kendaraan yang berbeda.Parameter PerhitunganSimulasi A (NJKB Rp500.000.000) Simulasi B (NJKB Rp175.000.000) NJKB (Nilai Dasar)Rp500.000.000 Rp175.000.000 DPP PPN Nilai LainRp458.333.333 Rp160.416.667 DPP PPnBM (15%)Tidak Diaplikasikan Rp183.750.000 PPN Terutang (12%)Rp55.000.000 Rp22.050.000 PPnBM (15% x DPP)Rp0 Rp27.562.500 PKB Pokok (1,2%)Rp6.000.000 Rp2.100.000 (Estimasi) Opsen PKB (66%)Rp3.960.000 Rp1.386.000 (Estimasi) BBNKB Pokok (12%)Rp60.000.000 Rp21.000.000 Opsen BBNKB (66%)Rp39.600.000 Rp13.860.000 (Estimasi) Biaya PNBP & SWDKLLJRp300.000 (STNK, TNKB, SWDKLLJ) Rp818.000 (STNK, TNKB, BPKB, SWDKLLJ) Total Pajak & Biaya DaerahRp109.860.000 Rp39.164.000 (Estimasi) Total Transaksi AkhirRp664.860.000 Rp263.776.500 Sistem integrasi perpajakan yang dirancang dalam dokumen SRS harus mampu memisahkan dana ini secara otomatis saat diler melakukan rekonsiliasi pembayaran dengan instansi terkait. Khususnya, porsi Opsen PKB dan Opsen BBNKB harus dapat diidentifikasi secara terpisah untuk mempermudah pelaporan pajak daerah di tingkat kabupaten/kota.Tata Kelola Pajak Progresif Kendaraan Bermotor dan Validasi Berbasis DataPajak progresif merupakan kebijakan fiskal daerah yang mengenakan tarif pajak lebih tinggi secara bertahap bagi individu yang memiliki lebih dari satu kendaraan roda empat terdaftar atas nama dan alamat tempat tinggal yang sama. Kebijakan ini bertujuan mengendalikan kepadatan lalu lintas, menekan polusi udara, serta menciptakan keadilan distribusi beban infrastruktur jalan akibat penggunaan kendaraan pribadi. Penentuan kepemilikan didasarkan pada kesamaan Nomor Induk Kependudukan (NIK) pada Kartu Tanda Penduduk (KTP) serta Kartu Keluarga (KK).Pajak progresif tidak berlaku lintas jenis kendaraan yang berbeda; kepemilikan satu unit mobil pribadi dan satu unit sepeda motor oleh wajib pajak yang sama tidak memicu pengenaan tarif progresif. Namun, apabila wajib pajak membeli mobil kedua, maka mobil tersebut otomatis dikategorikan sebagai kepemilikan kedua. Sistem pendaftaran pada SRS harus mengintegrasikan modul pengecekan kepemilikan kendaraan guna menghindari kesalahan penetapan tarif di awal transaksi.Di DKI Jakarta, terjadi transisi regulasi tarif progresif yang harus diantisipasi oleh arsitek sistem agar perangkat lunak tetap adaptif terhadap perubahan hukum daerah. Perbandingan tarif berdasarkan Perda Nomor 2 Tahun 2015 dan Perda Nomor 1 Tahun 2024 disajikan pada tabel di bawah ini.Urutan KepemilikanTarif Perda 2/2015 Tarif Perda 1/2024 (Terbaru) Kendaraan Ke-12,0%2,0%Kendaraan Ke-22,5%3,0%Kendaraan Ke-33,0%4,0%Kendaraan Ke-43,5%5,0%Kendaraan Ke-5 dst.Eskalasi +0,5% s.d. 10% (Ke-17)6,0% (Flat Maksimal)Untuk menghitung pajak progresif tahunan yang tercantum pada lembar Surat Ketetapan Kewajiban Pembayaran Pajak Kendaraan Bermotor (SKKP PKB), wajib pajak harus mencari nilai NJKB terlebih dahulu. Nilai NJKB ini dapat dicari dengan membagi nilai PKB pokok yang tertera di Surat Tanda Nomor Kendaraan (STNK) dengan tarif kepemilikan sebelumnya :$$\text{NJKB} \approx \frac{\text{PKB Pokok}}{\text{Tarif Berlaku}}$$Sebagai ilustrasi, jika wajib pajak memiliki tiga kendaraan dengan nilai NJKB yang sama sebesar Rp75.000.000, maka perbandingan simulasi PKB tahunan beserta komponen wajib SWDKLLJ (diasumsikan Rp150.000) berdasarkan kedua perda tersebut adalah sebagai berikut :Urutan MobilKomponen BiayaSkema Perda 2/2015 Skema Perda 1/2024 Mobil PertamaPKB Pokok (2%)SWDKLLJTotal PajakRp1.500.000Rp150.000Rp1.650.000Rp1.500.000Rp150.000Rp1.650.000Mobil KeduaPKB Pokok (2,5% vs 3%)SWDKLLJTotal PajakRp1.875.000Rp150.000Rp2.025.000Rp2.250.000Rp150.000Rp2.400.000Mobil KetigaPKB Pokok (3% vs 4%)SWDKLLJTotal PajakRp2.250.000Rp150.000Rp2.400.000Rp3.000.000Rp150.000Rp3.150.000Dalam pengembangan sistem perangkat lunak, algoritma penentuan pajak progresif harus melakukan fungsi validasi silang (cross-validation) berbasis API terhadap database dinamis Dinas Kependudukan dan Pencatatan Sipil (Dukcapil) dan Sistem Informasi Administrasi Manunggal Satu Atap (Samsat) daerah. Sistem harus mengidentifikasi apakah NIK atau nomor KK pelanggan telah terdaftar memiliki kendaraan sejenis di wilayah administrasi yang sama guna memproyeksikan beban pajak tahunan secara akurat sebelum transaksi diselesaikan.Manajemen Dokumen Legalitas Kendaraan: Matriks Validasi Transaksi Baru dan BekasAspek terpenting dalam rancangan sistem transaksi otomotif adalah manajemen dokumen legalitas. Ketidaklengkapan dokumen tidak hanya menurunkan nilai jual kendaraan secara drastis, tetapi juga berpotensi menyeret para pihak ke dalam sengketa hukum pidana maupun perdata. Dokumen legalitas diklasifikasikan secara ketat berdasarkan status transaksi kendaraan, yaitu kendaraan baru (Brand New) dan kendaraan bekas (Pre-owned).Pada transaksi mobil bekas, pemeriksaan fisik dokumen jauh lebih kompleks karena risiko pemalsuan dokumen yang tinggi. Pembeli atau platform perantara wajib memverifikasi beberapa dokumen penting seperti Buku Pemilik Kendaraan Bermotor (BPKB). Keaslian BPKB diverifikasi melalui keberadaan hologram Tri Brata Polri di halaman awal, nomor BPKB yang tercetak vertikal di sisi kanan, serta benang pengaman ultraviolet yang hanya terlihat di bawah sinar UV. BPKB asli sendiri didominasi dengan warna cokelat kehijauan dan terdiri atas 20 halaman.Selain itu, kwitansi transaksi profesional memerlukan setidaknya dua atau tiga rangkap kwitansi kosong yang sudah ditandatangani oleh pemilik kendaraan pertama sesuai nama yang tertera di BPKB untuk mempermudah proses balik nama (BBN-II) di kemudian hari. Jika mobil bekas yang ditransaksikan masih berada dalam status cicilan/kredit, maka sistem wajib meminta dokumen tambahan berupa fotokopi BPKB terlegalisir, kontrak perjanjian pembiayaan dari leasing, serta fotokopi histori pembayaran dan bukti setoran terakhir untuk meminimalkan risiko sengketa kepemilikan.Berikut adalah matriks validasi dokumen wajib yang harus diimplementasikan sebagai aturan validasi input data (input validation rules) dalam modul manajemen dokumen pada SRS:Nama DokumenJenis TransaksiAturan Validasi Sistem (SRS)Status KeharusanFaktur KendaraanBaru & BekasPencocokan nomor rangka/mesin secara digital dengan fisik unit.Wajib (Asli untuk baru; Salinan/asli untuk bekas).BPKBBekasPemindaian nomor seri vertikal kanan dan verifikasi nomor lambang Tri Brata.Wajib (Asli fisik tidak boleh ditinggal sehari-hari).STNKBekasVerifikasi masa aktif pajak tahunan dan STNK 5 tahunan.Wajib (Asli untuk verifikasi jalan raya).Kwitansi Kosong (2 Rangkap)BekasRangkap 1: tanda tangan pemilik sesuai BPKB. Rangkap 2: tanda tangan di atas materai.Wajib (Untuk keperluan balik nama BBN-II).Surat Pelepasan Hak (SPH)BekasValidasi tanda tangan direksi perusahaan dan stempel basah perusahaan penjual.Wajib (Hanya jika kendaraan eks-aset operasional perusahaan).Form ABekasPencocokan data nomor bea masuk dengan database Ditjen Bea Cukai.Wajib (Khusus untuk unit kendaraan impor utuh / CBU).Risalah LelangBekasPencocokan risalah resmi dari balai lelang negara/swasta terafiliasi.Wajib (Khusus jika unit didapatkan via jalur lelang resmi).Buku KEURBekasValidasi masa berlaku uji KIR berkala pada sistem perhubungan.Wajib (Hanya untuk tipe kendaraan niaga/komersial).Dokumen Kredit AktifBekasFotokopi BPKB terlegalisir, kontrak kredit, dan histori pembayaran terakhir.Wajib (Khusus jika status mobil masih dalam masa angsuran).Alur Operasional Pre-Delivery Inspection (PDI) dan Logistik PengirimanSebelum unit kendaraan bermotor diserahkan secara resmi kepada konsumen, diler wajib menjalankan prosedur pemeriksaan kualitas berlapis yang dikenal dengan nama Pre-Delivery Inspection (PDI). Prosedur ini sangat krusial untuk memitigasi risiko cacat produksi bawaan pabrik (manufacturing defects) maupun kerusakan fisik yang terjadi selama proses transportasi logistik dari pabrik ke diler (transportation damages). Secara teknis, PDI memastikan kendaraan dalam kondisi prima dan aman untuk digunakan di jalan raya, sekaligus menjaga reputasi diler serta hak garansi pabrikan (warranty compliance).Dalam konteks pengembangan modul logistik dan penyerahan unit pada SRS, sistem harus mengadopsi checklist PDI terstandarisasi sebagai alur kerja (workflow) digital yang harus diisi oleh teknisi diler sebelum status unit berubah menjadi "Siap Dikirim". Alur PDI secara sistematis meliputi tindakan-tindakan berikut :Dekonservasi Eksterior (Wax Pelindung): Pembersihan lapisan wax pelindung yang disemprotkan di pabrik guna melindungi bodi mobil dari korosi dan zat asam selama penyimpanan di pelabuhan atau gudang diler.Aktivasi Kelistrikan (Backup Fuse): Pemasangan kembali sekring pelindung utama kelistrikan (backup fuse) yang dilepas saat pengiriman untuk mencegah kebocoran daya baterai.Penghapusan Diagnostic Trouble Codes (DTC): Penggunaan perangkat pemindai sistem (seperti Honda Diagnostic System - HDS) ke port OBD-II mobil untuk memindai, memastikan ketiadaan malfungsi, dan menghapus kode eror (DTC) yang terekam pada ECU selama proses perakitan di pabrik.Pemeriksaan Kompartemen Mesin & Cairan: Pengisian dan pemastian volume oli mesin, minyak rem, cairan pendingin, minyak power steering, air wiper, fungsionalitas pengunci kap mesin, serta pembersihan terminal baterai dari korosi.Inspeksi Interior & Aksesoris: Pengujian freeplay pedal, fungsionalitas AC, pelurusan kemudi, radio/audio presets, wiper, fungsionalitas lampu kabin, sabuk pengaman, dan kelengkapan suku cadang/kunci cadangan.Uji Jalan Komprehensif (Road Test): Uji kemudi, akselerasi, pengereman, transmisi, sasis, keselarasan roda (wheel alignment), serta pendeteksian getaran atau bunyi aneh pada jalan bergelombang sejauh minimal 10 kilometer.Saat kendaraan dinyatakan lolos PDI, sistem diler akan mencetak Lembar Pemeriksaan PDI dan Lembar Laporan PDI yang wajib ditandatangani oleh konsumen saat serah terima fisik sebagai bukti sah serah terima unit bebas cacat. Bersamaan dengan penyerahan kendaraan, sistem harus memastikan dokumen-dokumen penyerta siap diserahkan kepada konsumen. Dokumen tersebut meliputi faktur penjualan (invoice), kuitansi pembayaran resmi, STCK, polis asuransi, buku garansi resmi, buku manual pemilik (owner's manual), dan sertifikat uji emisi (Pollution Under Control - PUC) jika dipersyaratkan daerah.Regulasi STCK dan Pelat Nomor SementaraKendaraan baru yang dikirim ke rumah konsumen belum dilengkapi dengan STNK dan TNKB asli karena proses penerbitan administrasi di Samsat memakan waktu beberapa minggu. Untuk memfasilitasi kebutuhan pengiriman unit secara legal, diler memanfaatkan Surat Tanda Coba Kendaraan (STCK) dan pelat nomor sementara berlatar putih dengan tulisan merah. Berdasarkan Peraturan Kepala Kepolisian Negara Republik Indonesia Nomor 7 Tahun 2021, operasional STCK diatur dengan ketentuan sebagai berikut :Fungsi Terbatas: Hanya boleh digunakan untuk memindahkan kendaraan dari pabrik ke diler, diler ke kediaman konsumen, atau diler ke kantor Samsat untuk uji fisik.Risiko Tilang Lalu Lintas: Penggunaan pelat merah-putih untuk berkendara di jalan raya untuk keperluan pribadi (di luar pengiriman resmi) dikategorikan sebagai pelanggaran hukum lalu lintas dan dapat ditilang oleh kepolisian karena tidak dianggap sebagai dokumen jalan raya resmi untuk publik. Mobil dengan STCK merah-putih juga sangat dilarang untuk dikendarai keluar kota.Masa Berlaku: Dokumen STCK hanya berlaku selama 1 (satu) bulan sebelum digantikan oleh STNK asli yang sah.Struktur Biaya: Pembuatan STCK standar diler dikenakan biaya administrasi resmi PNBP sebesar Rp50.000, namun jika konsumen menghendaki pelat bantuan sementara resmi kepolisian (pelat hitam sementara), biaya administrasi daerah berkisar di angka Rp1.500.000.Arsitektur Pembiayaan dan Kerangka Regulasi OJKSebagian besar transaksi pembelian mobil di Indonesia menggunakan jasa perusahaan pembiayaan (multifinance). Sektor ini diatur secara ketat oleh Otoritas Jasa Keuangan (OJK) guna menjaga stabilitas sistem keuangan dan melindungi konsumen dari risiko gagal bayar yang masif.Regulasi Batas Minimum Uang Muka (Down Payment - DP)Berdasarkan POJK Nomor 35/POJK.05/2018 dan POJK Nomor 46 Tahun 2024 tentang Pengembangan dan Penguatan Perusahaan Pembiayaan, besaran minimum uang muka (Down Payment - DP) yang wajib dibayarkan konsumen ditentukan secara dinamis berdasarkan Rasio Pembiayaan Bermasalah (Non-Performing Financing - NPF) dari perusahaan pembiayaan terkait. Aturan pengkondisian logika sistem pembiayaan pada SRS dirangkum dalam tabel berikut :Rasio NPF Net Perusahaan PembiayaanBatas Minimum DP Motor (Roda 2/3)Batas Minimum DP Mobil Non-Produktif (Multiguna)Batas Minimum DP Mobil Produktif (Investasi)NPF $\le$ 1% (Kondisi Sangat Sehat) 0% (Kebijakan DP Nol Persen) 0% 0% 1% < NPF $\le$ 3% 10% 10% 10% 3% < NPF $\le$ 5% 15% 15% 15% NPF > 5% (Kondisi Berisiko Tinggi) 20% 20% 15% Bagi Kendaraan Bermotor Listrik Berbasis Baterai (KBLBB), OJK memberikan kelonggaran khusus dengan memperbolehkan penerapan uang muka sebesar 0% bagi perusahaan pembiayaan yang memenuhi kriteria kesehatan keuangan minimum untuk mendorong program elektrifikasi transportasi nasional.Subsidi Kendaraan Listrik (EV) Berdasarkan Aturan TKDNPemerintah memberikan pemotongan pajak khusus bagi pembelian mobil listrik baru yang diproduksi di dalam negeri dengan Tingkat Komponen Dalam Negeri (TKDN) tertentu. Sesuai Peraturan Presiden dan PMK No. 38 Tahun 2023, ketentuan subsidi diatur sebagai berikut :TKDN $\ge$ 40%: Berhak mendapatkan insentif pemotongan PPN sebesar 10% ditanggung pemerintah (PPN DTP), sehingga konsumen hanya membayar PPN efektif sebesar 2% dari harga jual.TKDN 20% s.d. 40% (Hanya Bus): Berhak mendapatkan insentif PPN DTP sebesar 5%, sehingga tarif PPN efektif menjadi 7%.KBLBB Hybrid: Tidak mendapatkan insentif PPN DTP karena masih mengadopsi mesin pembakaran internal bahan bakar fosil.Penerapan insentif ini dilakukan di tingkat diler melalui penerbitan faktur pajak khusus, sehingga sistem SRS pada diler harus memiliki modul integrasi perpajakan yang dapat mendeteksi klasifikasi TKDN unit kendaraan secara dinamis.Prosedur Hukum Pengikatan Jaminan FidusiaDalam skema pembiayaan kredit, pengikatan jaminan fidusia adalah proses hukum wajib berdasarkan Undang-Undang Nomor 42 Tahun 1999 tentang Jaminan Fidusia. Jaminan fidusia memberikan hak kepemilikan yuridis atas kendaraan kepada kreditur (multifinance) sebagai jaminan utang, sementara penguasaan fisik kendaraan tetap berada di tangan debitur untuk aktivitas operasional. Pengikatan ini wajib didaftarkan secara online ke Kantor Pendaftaran Fidusia di bawah Direktorat Jenderal Administrasi Hukum Umum (Ditjen AHU) Kemenkumham.Prosedur administrasi pendaftaran fidusia elektronik wajib diakomodasi dalam rancangan modul integrasi legalitas pada SRS dengan batasan-batasan hukum berikut :Batas Waktu Pendaftaran: Berdasarkan Peraturan Pemerintah Nomor 21 Tahun 2015, permohonan pendaftaran jaminan fidusia wajib diajukan paling lambat 30 hari kalender sejak tanggal pembuatan akta jaminan fidusia di hadapan Notaris. Pengajuan melebihi batas waktu tersebut akan ditolak oleh sistem dan mengharuskan pembuatan ulang akta.Hak Preferen Kreditur: Pendaftaran fidusia memberikan hak istimewa (hak preferen) kepada kreditur untuk didahulukan daripada kreditur lainnya dalam hal pembagian piutang apabila debitur mengalami kepailitan atau gagal bayar.Sanksi Larangan Pemindahtanganan: Berdasarkan Pasal 23 ayat (2) UU Jaminan Fidusia, debitur dilarang keras mengalihkan, menggadaikan, atau menyewakan objek jaminan fidusia kepada pihak ketiga tanpa persetujuan tertulis dari penerima fidusia (kreditur). Pelanggaran atas ketentuan ini dikategorikan sebagai tindak pidana kejahatan pemisahan aset jaminan.Rekomendasi Integrasi API dan Arsitektur O2O untuk Penyusunan Dokumen SRSAgar dokumen SRS yang disusun dapat diimplementasikan menjadi sistem perangkat lunak yang andal oleh tim pengembang, arsitektur sistem harus mengadopsi model terintegrasi yang menghubungkan sistem inti diler (core dealer management system) dengan berbagai modul eksternal. Integrasi API pihak ketiga ini memastikan efisiensi proses bisnis, keakuratan data, dan kepatuhan terhadap hukum nasional.Spesifikasi Kebutuhan Integrasi API EksternalAPI Kementerian Dalam Negeri (Dukcapil): Digunakan untuk melakukan pencocokan data KTP dan NIK secara instan saat registrasi pembeli baru guna menghindari identity fraud.API OJK iDebku / PEFINDO Credit Checking: Modul pengajuan kredit harus melakukan panggilan otomatis ke API ini untuk mengunduh iDeb (informasi debitur) yang berisi riwayat fasilitas kredit, performa pembayaran bulanan, dan status kolektibilitas kredit sebagai dasar analisis persetujuan kredit.API Samsat / Badan Pendapatan Daerah (Bapenda): Digunakan untuk memverifikasi keaslian STNK kendaraan bekas yang masuk (modul tukar tambah), mengecek status blokir tilang elektronik (ETLE), serta menghitung nilai pajak progresif berdasarkan kepemilikan NIK pembeli secara real-time.API Ditjen AHU Fidusia Online: Memungkinkan sistem diler/leasing mengirimkan draf akta jaminan fidusia ke notaris mitra dan secara otomatis mendaftarkannya ke sistem SABH Ditjen AHU Kemenkumham, mengunduh kode bayar PNBP, dan menerbitkan sertifikat fidusia elektronik.API Payment Gateway & Bank Partner: Integrasi VA (Virtual Account) dinamis dari bank partner (seperti ACC, TAF, AstraPay) untuk memproses pembayaran uang muka secara otomatis dan mencatat penyelesaian transaksi finansial (instant settlement) dalam waktu kurang dari 60 menit.API Digital Signature (Penyedia TTE Bersertifikasi Kominfo): Integrasi tanda tangan digital yang sah secara hukum pada Surat Pemesanan Kendaraan (SPK) dan kontrak kredit pembiayaan.Alur Kerja Transaksi Online-to-Offline (O2O) TerintegrasiPlatform diler modern wajib mengadopsi model O2O yang mulus (seamless), meniru kesuksesan ekosistem diler omnichannel terkemuka di Indonesia. Alur kerja sistem yang direkomendasikan untuk masuk ke dalam bab fungsionalitas SRS dijabarkan di bawah ini:Tahap 1: Inisiasi Transaksi & Estimasi Online
-Konsumen memilih unit kendaraan baru atau mengunggah data spesifikasi mobil bekas yang ingin dijual melalui portal web/aplikasi. Sistem secara otomatis merilis estimasi harga awal berdasarkan data pasar yang diintegrasikan (pricing algorithm).Tahap 2: Penjadwalan Inspeksi Fisik Digital
-Pembeli dapat memilih datang ke cabang diler terdekat atau menjadwalkan pemeriksaan di rumah (Home Inspection) secara gratis. Inspektor diler memeriksa kondisi fisik kendaraan secara mekanis di lapangan berpedoman pada modul inspeksi digital yang mencakup checklist 150 titik (seperti standar Caroline.id) atau 188 titik (seperti standar OLXmobbi). Hasil inspeksi diunggah secara real-time ke sistem diler.Tahap 3: Penawaran Harga Final & Transparansi Dokumen
-Sistem menganalisis data inspeksi fisik dan mencocokkannya dengan dokumen legalitas yang diunggah. Apabila lolos verifikasi, sistem diler mengeluarkan harga penawaran final yang objektif berbasis data pasar aktual. Setelah kesepakatan dicapai, draf dokumen transaksi dibuat otomatis oleh sistem.Tahap 4: Pembayaran Instan & Serah Terima Dokumen (Instant Payout Module)
-Modul transaksi pada sistem keuangan diler memproses pencairan dana langsung ke rekening bank penjual dalam waktu maksimal 60 menit setelah deal dokumen lengkap disetujui. Serah terima dokumen fisik asli (BPKB, STNK, Faktur) dan unit mobil baru dilakukan setelah dana dikonfirmasi efektif masuk ke rekening penjual guna menjamin keamanan transaksi.Tahap 5: Aktivasi Garansi & Layanan Purnajual
-Setelah transaksi selesai, modul purnajual pada SRS mengaktifkan jaminan perlindungan mesin dan komponen transmisi secara otomatis selama 1 tahun (seperti garansi 7G+ atau program sejenis yang mencakup mesin, transmisi, AC, rem, dan jaminan uang kembali jika terbukti unit bekas tabrakan hebat atau terendam banjir). Langkah ini diintegrasikan ke sistem manajemen hubungan pelanggan (CRM System) untuk pengingat servis berkala otomatis.
+# Analisis Sistem Transaksi, Struktur Fiskal, dan Manajemen Dokumen Kendaraan Bermotor di Indonesia
+
+Panduan Komprehensif Penyusunan Dokumen Spesifikasi Kebutuhan Perangkat Lunak (SRS)
+
+---
+
+## Daftar Isi
+
+1. [Analisis Regulasi Fiskal & Struktur Pajak](#1-analisis-regulasi-fiskal--struktur-pajak)
+2. [Tata Kelola Pajak Progresif](#2-tata-kelola-pajak-progresif)
+3. [Manajemen Dokumen Legalitas](#3-manajemen-dokumen-legalitas)
+4. [Pre-Delivery Inspection (PDI) & Logistik](#4-pre-delivery-inspection-pdi--logistik)
+5. [Regulasi STCK & Pelat Nomor](#5-regulasi-stck--pelat-nomor)
+6. [Arsitektur Pembiayaan & OJK](#6-arsitektur-pembiayaan--ojk)
+7. [Integrasi API & Arsitektur O2O](#7-integrasi-api--arsitektur-o2o)
+
+---
+
+## 1. Analisis Regulasi Fiskal & Struktur Pajak
+
+### 1.1 Komponen Perpajakan Kendaraan Baru
+
+Pembelian kendaraan bermotor roda empat baru di Indonesia melibatkan struktur perpajakan berlapis yang menggabungkan instrumen pajak pemerintah pusat dan pemerintah daerah. Berdasarkan **UU HKPD** (UU No. 1 Tahun 2022) serta **PMK 131/2024**, pembeli dibebankan setidaknya **tujuh komponen biaya fiskal**.
+
+### 1.2 Dasar Pengenaan Pajak (DPP) & PPN
+
+Penetapan nilai pajak kendaraan mengacu pada **Nilai Jual Kendaraan Bermotor (NJKB)**, yaitu nilai standar yang ditetapkan oleh Dispenda melalui data keagenan APM.
+
+#### Formula DPP PPN Nilai Lain
+
+```
+DPP PPN Nilai Lain = (11/12) × NJKB
+```
+
+#### Formula PPN Terutang (Tarif 12%)
+
+```
+PPN Terutang = 12% × DPP PPN Nilai Lain
+PPN Terutang = 12% × (11/12 × NJKB) = 11% × NJKB
+```
+
+### 1.3 Sistem Opsen (UU HKPD)
+
+Di tingkat daerah, PKB dan BBNKB dikenakan biaya tambahan berupa **Opsen** dengan tarif **66%** dari nilai pajak pokok:
+
+```
+Total PKB = PKB Pokok + Opsen PKB = PKB Pokok + (66% × PKB Pokok)
+Total BBNKB = BBNKB Pokok + Opsen BBNKB = BBNKB Pokok + (66% × BBNKB Pokok)
+```
+
+### 1.4 Tabel Komponen Biaya & Pajak
+
+| Komponen | Tarif/Ketentuan | DPP | Otoritas |
+|----------|----------------|-----|----------|
+| **PPN** | 12% (Mekanisme Nilai Lain) | (11/12) × NJKB | DJP (Pusat) |
+| **PPnBM** | Variatif (contoh: 15%) | DPP Nilai Lain | DJP (Pusat) |
+| **PKB Pokok** | 1,2% - 2% (kepemilikan pertama) | NJKB × Koefisien Jalan | Pemerintah Provinsi |
+| **Opsen PKB** | 66% dari PKB Pokok | PKB Pokok Terutang | Pemerintah Kab/Kota |
+| **BBNKB Pokok** | Maksimal 12% | NJKB | Pemerintah Provinsi |
+| **Opsen BBNKB** | 66% dari BBNKB Pokok | BBNKB Pokok Terutang | Pemerintah Kab/Kota |
+| **SWDKLLJ** | Rp143.000 - Rp150.000 | Flat | Jasa Raharja |
+| **STNK** | Rp200.000 | Per penerbitan | Polri (PNBP) |
+| **TNKB** | Rp100.000 | Per penerbitan | Polri (PNBP) |
+| **BPKB** | Rp375.000 | Per penerbitan | Polri (PNBP) |
+
+### 1.5 Simulasi Perhitungan
+
+#### Parameter Perhitungan
+
+| Parameter | Simulasi A (NJKB Rp500 juta) | Simulasi B (NJKB Rp175 juta) |
+|-----------|-------------------------------|-------------------------------|
+| **NJKB** | Rp500.000.000 | Rp175.000.000 |
+| **DPP PPN Nilai Lain** | Rp458.333.333 | Rp160.416.667 |
+| **DPP PPnBM (15%)** | Tidak diaplikasikan | Rp183.750.000 |
+| **PPN Terutang (12%)** | Rp55.000.000 | Rp22.050.000 |
+| **PPnBM (15% × DPP)** | Rp0 | Rp27.562.500 |
+| **PKB Pokok (1,2%)** | Rp6.000.000 | Rp2.100.000 |
+| **Opsen PKB (66%)** | Rp3.960.000 | Rp1.386.000 |
+| **BBNKB Pokok (12%)** | Rp60.000.000 | Rp21.000.000 |
+| **Opsen BBNKB (66%)** | Rp39.600.000 | Rp13.860.000 |
+| **Biaya PNBP & SWDKLLJ** | Rp300.000 | Rp818.000 |
+| **Total Pajak & Biaya** | Rp109.860.000 | Rp39.164.000 |
+| **Total Transaksi Akhir** | Rp664.860.000 | Rp263.776.500 |
+
+---
+
+## 2. Tata Kelola Pajak Progresif
+
+### 2.1 Definisi & Latar Belakang
+
+Pajak progresif merupakan kebijakan fiskal daerah yang mengenakan tarif pajak lebih tinggi secara bertahap bagi individu yang memiliki **lebih dari satu kendaraan roda empat** terdaftar atas nama dan alamat tempat tinggal yang sama.
+
+**Tujuan kebijakan:**
+- Mengendalikan kepadatan lalu lintas
+- Menekan polusi udara
+- Menciptakan keadilan distribusi beban infrastruktur jalan
+
+**Catatan penting:** Pajak progresif **tidak berlaku** lintas jenis kendaraan berbeda (mobil vs motor).
+
+### 2.2 Perbandingan Tarif Perda
+
+| Urutan Kepemilikan | Perda 2/2015 | Perda 1/2024 (Terbaru) |
+|--------------------|---------------|-------------------------|
+| Kendaraan Ke-1 | 2,0% | 2,0% |
+| Kendaraan Ke-2 | 2,5% | 3,0% |
+| Kendaraan Ke-3 | 3,0% | 4,0% |
+| Kendaraan Ke-4 | 3,5% | 5,0% |
+| Kendaraan Ke-5 dst. | Eskalasi +0,5% s.d. 10% | 6,0% (Flat Maksimal) |
+
+### 2.3 Formula Pencarian NJKB dari STNK
+
+```
+NJKB = PKB Pokok / Tarif Berlaku
+```
+
+### 2.4 Simulasi Pajak Progresif
+
+*Contoh: 3 kendaraan dengan NJKB sama Rp75.000.000, SWDKLLJ Rp150.000*
+
+| Urutan Mobil | Komponen | Perda 2/2015 | Perda 1/2024 |
+|--------------|----------|--------------|--------------|
+| **Mobil Pertama** | PKB Pokok (2%) | Rp1.500.000 | Rp1.500.000 |
+| | SWDKLLJ | Rp150.000 | Rp150.000 |
+| | **Total** | **Rp1.650.000** | **Rp1.650.000** |
+| **Mobil Kedua** | PKB Pokok | Rp1.875.000 (2,5%) | Rp2.250.000 (3%) |
+| | SWDKLLJ | Rp150.000 | Rp150.000 |
+| | **Total** | **Rp2.025.000** | **Rp2.400.000** |
+| **Mobil Ketiga** | PKB Pokok | Rp2.250.000 (3%) | Rp3.000.000 (4%) |
+| | SWDKLLJ | Rp150.000 | Rp150.000 |
+| | **Total** | **Rp2.400.000** | **Rp3.150.000** |
+
+---
+
+## 3. Manajemen Dokumen Legalitas
+
+### 3.1 Klasifikasi Dokumen
+
+Dokumen legalitas diklasifikasikan berdasarkan **status transaksi** kendaraan:
+
+- **Kendaraan Baru (Brand New)**
+- **Kendaraan Bekas (Pre-owned)**
+
+### 3.2 Verifikasi BPKB Asli
+
+Pada transaksi mobil bekas, keaslian **BPKB** diverifikasi melalui:
+
+- ✅ Keberadaan hologram **Tri Brata Polri** di halaman awal
+- ✅ Nomor BPKB tercetak vertikal di sisi kanan
+- ✅ Benang pengaman **ultraviolet** (terlihat di bawah sinar UV)
+- ✅ Warna cokelat kehijauan dengan **20 halaman**
+
+### 3.3 Matriks Validasi Dokumen
+
+| Nama Dokumen | Jenis Transaksi | Aturan Validasi | Status |
+|--------------|-----------------|-----------------|--------|
+| **Faktur Kendaraan** | Baru & Bekas | Pencocokan nomor rangka/mesin | Wajib |
+| **BPKB** | Bekas | Verifikasi hologram Tri Brata & benang UV | Wajib (Asli) |
+| **STNK** | Bekas | Verifikasi masa aktif pajak & STNK 5 tahunan | Wajib |
+| **Kwitansi Kosong (2 rangkap)** | Bekas | Rangkap 1: tanda tangan, Rangkap 2: materai | Wajib |
+| **Surat Pelepasan Hak (SPH)** | Bekas | Validasi tanda tangan & stempel basah | Wajib (eks-perusahaan) |
+| **Form A** | Bekas (CBU) | Pencocokan bea masuk dengan Ditjen Bea Cukai | Wajib |
+| **Risalah Lelang** | Bekas | Dari balai lelang resmi | Wajib (via lelang) |
+| **Buku KEUR** | Bekas (Niaga) | Masa berlaku KIR | Wajib |
+| **Dokumen Kredit Aktif** | Bekas | Fotokopi BPKB, kontrak, histori bayar | Wajib (kredit aktif) |
+
+### 3.4 Dokumen Tambahan untuk Kredit Aktif
+
+Jika mobil bekas masih dalam **cicilan/kredit**:
+
+1. Fotokopi BPKB terlegalisir
+2. Kontrak perjanjian pembiayaan dari leasing
+3. Fotokopi histori pembayaran terakhir
+4. Bukti setoran terakhir
+
+---
+
+## 4. Pre-Delivery Inspection (PDI) & Logistik
+
+### 4.1 Definisi & Tujuan
+
+**Pre-Delivery Inspection (PDI)** adalah prosedur pemeriksaan kualitas berlapis yang wajib dijalankan diler sebelum unit diserahkan kepada konsumen.
+
+**Tujuan:**
+- Mitigasi risiko cacat produksi bawaan pabrik
+- Mitigasi kerusakan selama transportasi logistik
+- Memastikan kendaraan aman untuk jalan raya
+- Menjaga warranty compliance
+
+### 4.2 Checklist PDI Terstandarisasi
+
+#### Tahap 1: Dekonservasi Eksterior
+Pembersihan lapisan **wax pelindung** yang disemprotkan di pabrik untuk melindungi bodi mobil dari korosi selama penyimpanan di pelabuhan/gudang.
+
+#### Tahap 2: Aktivasi Kelistrikan
+Pemasangan kembali **backup fuse** kelistrikan utama yang dilepas saat pengiriman untuk mencegah kebocoran daya baterai.
+
+#### Tahap 3: Penghapusan DTC (Diagnostic Trouble Codes)
+Penggunaan perangkat pemindai sistem ke **port OBD-II** untuk:
+- Memindai DTC yang terekam di ECU
+- Memastikan ketiadaan malfungsi
+- Menghapus kode eror
+
+#### Tahap 4: Pemeriksaan Kompartemen Mesin & Cairan
+Pengisian dan pemeriksaan:
+- Oli mesin
+- Minyak rem
+- Cairan pendingin
+- Minyak power steering
+- Air wiper
+- Pengunci kap mesin
+- Terminal baterai
+
+#### Tahap 5: Inspeksi Interior & Aksesoris
+Pengujian:
+- Freeplay pedal
+- Fungsionalitas AC
+- Pelurusan kemudi
+- Radio/audio presets
+- Wiper
+- Lampu kabin
+- Sabuk pengaman
+- Kunci cadangan
+
+#### Tahap 6: Uji Jalan Komprehensif
+Pengujian selama **minimal 10 kilometer**:
+- Akselerasi
+- Pengereman
+- Transmisi
+- Sasis
+- Wheel alignment
+- Deteksi getaran/bunyi aneh
+
+### 4.3 Dokumen Penyerahan Unit
+
+Bersamaan dengan penyerahan kendaraan:
+
+| Dokumen | Keterangan |
+|---------|------------|
+| Faktur penjualan | Invoice resmi dari diler |
+| Kuitansi pembayaran | Bukti pembayaran sah |
+| STCK | Surat coba kendaraan sementara |
+| Polis asuransi | Perlindungan kendaraan |
+| Buku garansi | Garansi resmi pabrikan |
+| Buku manual | Owner's manual |
+| Sertifikat PUC | Pollution Under Control (jika required) |
+
+---
+
+## 5. Regulasi STCK & Pelat Nomor
+
+### 5.1 Definisi STCK
+
+**Surat Tanda Coba Kendaraan (STCK)** adalah dokumen jalan sementara untuk kendaraan baru yang belum memiliki STNK asli.
+
+### 5.2 Ketentuan Operasional
+
+Berdasarkan **Perkapolri 7/2021**:
+
+| Aspek | Ketentuan |
+|-------|----------|
+| **Fungsi** | Pemindahan pabrik→diler, diler→konsumen, uji fisik Samsat |
+| **Masa berlaku** | 1 (satu) bulan |
+| **Pelanggaran** | Tilang jika digunakan untuk keperluan pribadi di jalan raya |
+| **Larangan** | Dilarang dikendarai keluar kota |
+| **Biaya PNBP** | Rp50.000 (standar) |
+| **Biaya tambahan** | Rp1.500.000 (pelat hitam sementara) |
+
+### 5.3 Karakteristik Pelat Nomor Sementara
+
+- Latar **putih** dengan tulisan **merah**
+- Tidak dianggap dokumen jalan raya resmi untuk publik
+- Hanya untuk konteks logistik diler-konsumen
+
+---
+
+## 6. Arsitektur Pembiayaan & OJK
+
+### 6.1 Regulasi Batas Minimum DP
+
+Berdasarkan **POJK 35/2018** dan **POJK 46/2024**:
+
+| Rasio NPF Net | DP Motor (Roda 2/3) | DP Mobil Non-Produktif | DP Mobil Produktif |
+|---------------|---------------------|------------------------|-------------------|
+| ≤ 1% | 0% | 0% | 0% |
+| 1% - 3% | 10% | 10% | 10% |
+| 3% - 5% | 15% | 15% | 15% |
+| > 5% | 20% | 20% | 15% |
+
+### 6.2 Subsidi Kendaraan Listrik (KBLBB)
+
+| TKDN | Insentif PPN DTP | PPN Efektif |
+|------|------------------|-------------|
+| ≥ 40% (BEV) | 10% | 2% |
+| 20% - 40% (Bus) | 5% | 7% |
+| Hybrid | Tidak ada | 11% |
+
+### 6.3 Prosedur Jaminan Fidusia
+
+Berdasarkan **UU 42/1999** dan **PP 21/2015**:
+
+| Aspek | Ketentuan |
+|-------|----------|
+| **Batas pendaftaran** | Maksimal **30 hari kalender** sejak akta notaris |
+| **Konsekuensi terlambat** | Penolakan otomatis oleh sistem AHU |
+| **Hak preferen** | Kreditur didahulukan dalam pembagian piutang |
+| **Larangan** | Debitur dilarang mengalihkan/gadai objek fidusia tanpa persetujuan kreditur |
+
+---
+
+## 7. Integrasi API & Arsitektur O2O
+
+### 7.1 Spesifikasi API Eksternal
+
+| API | Tujuan | Output |
+|-----|--------|--------|
+| **Dukcapil** | Verifikasi NIK & face matching | Face match score |
+| **SLIK OJK / PEFINDO** | Credit checking | Dokumen iDeb, kolektibilitas |
+| **Samsat / Bapenda** | Validasi STNK, ETLE, pajak progresif | Status STNK, nominal PKB |
+| **Ditjen AHU (Fidusia)** | Pendaftaran fidusia elektronik | Sertifikat fidusia, kode PNBP |
+| **Payment Gateway** | VA dinamis, instant settlement | Konfirmasi pembayaran |
+| **Digital Signature (TTE)** | Tanda tangan digital tersertifikasi | Sertifikat Kominfo |
+
+### 7.2 Alur Kerja O2O Terintegrasi
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                     MODEL O2O (ONLINE-TO-OFFLINE)                    │
+└──────────────────────────────────────────────────────────────────────┘
+
+[TAHAP 1] ──────▶ [TAHAP 2] ──────▶ [TAHAP 3] ──────▶ [TAHAP 4]
+ Inisiasi          Inspeksi          Penawaran        Pembayaran
+ Online            Fisik             Final            Instan
+     │                │                │                │
+     ▼                ▼                ▼                ▼
+ Estimasi         Jadwalkan         Analisis         Transfer
+ harga awal      inspeksi (150-    inspeksi &       dana <60
+ via algorithm    188 titik)         dokumen          menit
+```
+
+#### Tahap 1: Inisiasi Transaksi & Estimasi Online
+- Konsumen memilih unit baru atau upload spesifikasi mobil bekas
+- Sistem rilis estimasi harga awal berdasarkan pricing algorithm
+
+#### Tahap 2: Penjadwalan Inspeksi Fisik Digital
+- **Home Inspection** atau datang ke diler
+- Inspektor periksa 150-188 titik (standar Caroline.id/OLXmobbi)
+- Upload hasil real-time ke sistem
+
+#### Tahap 3: Penawaran Harga Final & Transparansi
+- Sistem analisis data inspeksi + dokumen legalitas
+- Kalau lolos verifikasi → harga penawaran final objektif
+- Generate draf dokumen transaksi otomatis
+
+#### Tahap 4: Pembayaran Instan & Serah Terima (Instant Payout)
+- Pencairan dana ke rekening penjual **maksimal 60 menit**
+- Serah terima dokumen asli (BPKB, STNK, Faktur) setelah dana confirmed
+
+#### Tahap 5: Aktivasi Garansi & Layanan Purnajual
+- Aktivasi otomatis **garansi mesin & transmisi 1 tahun**
+- Integrasi CRM untuk pengingat servis berkala
+
+---
+
+## Referensi
+
+| No | Sumber |
+|----|--------|
+| 1 | cnbcindonesia.com - Berlaku Tahun 2025, Beli Mobil Bayar 7 Komponen Pajak |
+| 2 | oto.detik.com - Pajak Tinggi Bikin Orang RI Mikir-mikir Beli Mobil Baru |
+| 3 | klikpajak.id - Cara Menghitung Pajak Kendaraan dan Jenis Pajaknya |
+| 4 | wuling.id - Pajak Progresif Mobil dan Cara Menghitungnya |
+| 5 | cimbniaga.co.id - Pengertian Pajak Progresif, Cara Menghitung |
+| 6 | pajak.go.id - PMK 131/2024: Tarif PPN Sebelas-Dua Belas |
+| 7 | auto2000.co.id - Tarif Pajak Progresif Kendaraan Bermotor Terlengkap 2026 |
+| 8 | bimtekedukasi.com - Bimtek Implementasi Verifikasi Dan Validasi Data Via Dukcapil API |
+| 9 | blog.ibid.astra.co.id - 6 Dokumen Jual Beli Mobil Bekas yang Perlu Disiapkan |
+| 10 | jualmobilmu.id - 8 Dokumen Penting Transaksi Jual Beli Mobil |
+| 11 | caroline.id - Step by Step Jual Mobil Bekas Aman Tanpa Calo |
+| 12 | help.olxmobbi.co.id - FAQ Menjual Mobil Instan di OLXmobbi |
+| 13 | ackodrive.com - Pre-delivery Inspection (PDI) Checklist for New Cars |
+| 14 | ventavid.com - PDI - Pre-Delivery Inspection |
+| 15 | hyundaimobil.co.id - Pre-Delivery Order Inspection |
+| 16 | daihatsu.co.id - Temporary Registration Certificate for New Cars |
+| 17 | ojk.go.id - Press Release OJK Launches Financial Information Services System (SLIK) |
+| 18 | blog.itsjack.com - The Benefits of SLIK OJK for Creditors & Customers |
+| 19 | indonesiabaik.id - Ketentuan DP Nol Persen Kendaraan Bermotor |
+| 20 | ojk.go.id - POJK Nomor 46 Tahun 2024 Pengembangan dan Penguatan Perusahaan Pembiayaan |
+| 21 | otomotif.kompas.com - OJK Izinkan DP 0 Persen, Pilihan Mobil Listrik |
+| 22 | fh.unram.ac.id - Pelaksanaan Pendaftaran Jaminan Fidusia Secara Elektronik |
+| 23 | yaplegal.id - Ahu Fidusia: Aset Bisnis & Kunci Keamanan Transaksi |
+| 24 | indonesiancloud.com - Understanding SLIK OJK and How to Check SLIK Online |
+| 25 | portal.ahu.go.id - Buku Petunjuk Pendaftaran Jaminan Fidusia Online |
+| 26 | caroline.id - Ranking Marketplace Mobil Bekas 2026 di Indonesia |
+
+---
+
+*Dokumen ini digunakan sebagai referensi riset untuk penyusunan SRS Sistem Transaksi Pembelian Kendaraan Bermotor Terintegrasi (Indonesia)*
