@@ -47,6 +47,364 @@ Context Diagram, Use Case Diagram (14 UC), dan tabel hubungan sistem eksternal t
 
 5 modul utama telah terdefinisi: pricing Engine, Inspeksi Fisik, Verifikasi Dokumen, Fintech/Leasing, dan Logistik/PDI.
 
+#### 2.2.1 State Machine Diagram (State Transition)
+
+Sistem ini memiliki dua entitas utama yang memerlukan State Machine untuk mengelola transisi status:
+
+##### A. State Machine: Entitas Kendaraan
+
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT: Pembeli membuat pesanan
+    DRAFT --> BOOKED: Pembeli melakukan pembayaran booking fee
+    BOOKED --> VERIFIED: Admin Dealer memverifikasi dokumen
+    BOOKED --> DRAFT: Verifikasi dokumen gagal (revise)
+    VERIFIED --> PAID: Pembeli melakukan pelunasan
+    VERIFIED --> BOOKED: Pembayaran tidak valid (revise)
+    PAID --> DELIVERED: Teknisi menyelesaikan PDI & serah terima
+    PAID --> VERIFIED: Unit tidak lolos PDI (revise)
+    DELIVERED --> [*]: Transaksi selesai
+    DELIVERED --> PAID: Klaim garansi (revise)
+```
+
+**Penjelasan Status Kendaraan:**
+
+| Status | Deskripsi | Aksi yang Memicu | Event yang Dihasilkan |
+|--------|-----------|-----------------|---------------------|
+| `DRAFT` | Data kendaraan masuk, belum ada komitmen | Input data di portal | - |
+| `BOOKED` | Booking fee sudah dibayarkan | Pembayaran booking | Generate SPK |
+| `VERIFIED` | Seluruh dokumen terverifikasi valid | Validasi dokumen + API | Approval untuk pembayaran |
+| `PAID` | Pelunasan diterima | Konfirmasi pembayaran | Trigger PDI |
+| `DELIVERED` | Unit sudah diserahterimakan | Serah terima + PDI pass | Aktifasi garansi |
+
+##### B. State Machine: Entitas AplikasiKredit
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING: Pembeli mengajukan kredit
+    PENDING --> PENDING: API SLIK timeout (retry)
+    PENDING --> APPROVED: Surveyor approve pengajuan
+    PENDING --> REJECTED: Scoring gagal / kolektibilitas buruk
+    REJECTED --> [*]: Aplikasi ditutup
+    APPROVED --> DOCUMENTED: Dokumen lengkap ter-upload
+    APPROVED --> REJECTED: Dokumen tidak lengkap (timeout)
+    DOCUMENTED --> FIDUSIA_COMPLETE: Sertifikat fidusia terdaftar di AHU
+    DOCUMENTED --> DOCUMENTED: Pendaftaran fidusia dipending (retry)
+    FIDUSIA_COMPLETE --> [*]: Financing siap dicairkan
+```
+
+**Penjelasan Status AplikasiKredit:**
+
+| Status | Deskripsi | Aksi yang Memicu | Event yang Dihasilkan |
+|--------|-----------|-----------------|---------------------|
+| `PENDING` | Menunggu review surveyor | Submit aplikasi + data iDeb | Generate submission ID |
+| `APPROVED` | Survei approve | Review manual/auto | Enable document upload |
+| `REJECTED` | Aplikasi ditolak | Scoring < threshold | Notify ke customer |
+| `DOCUMENTED` | Dokumen pendukung lengkap | Upload kontrak + faktur | Trigger fidusia |
+| `FIDUSIA_COMPLETE` | Sertifikat fidusia terbit | Pendaftaran AHU success | Trigger pencairan dana |
+
+##### C. Tabel Transisi Status Gabungan
+
+| Status Awal | Event/Trigger | Status Akhir | Kondisi |
+|-------------|--------------|--------------|---------|
+| DRAFT | Pembayaran booking | BOOKED | Booking fee ≥ minimal |
+| BOOKED | Verifikasi dokumen OK | VERIFIED | Seluruh checklist terpenuhi |
+| VERIFIED | Konfirmasi pelunasan | PAID | Nominal sesuai |
+| PAID | PDI pass + serah terima | DELIVERED | Checklist PDI 100% |
+| PENDING | Surveyor approve | APPROVED | Score ≥ passing threshold |
+| APPROVED | Upload dokumen lengkap | DOCUMENTED | Kontrak + faktur valid |
+| DOCUMENTED | AHU approve | FIDUSIA_COMPLETE | Sertifikat terbit |
+
+#### 2.2.2 Deskripsi Skenario Use Case Naratif
+
+Berikut adalah deskripsi naratif untuk 3 Use Case kritis sistem:
+
+---
+
+##### UC-01: Estimasi Harga Online (Pricing Engine)
+
+**ID Use Case:** UC-01  
+**Nama:** Estimasi Harga Online (Pricing Engine)  
+**Aktor Utama:** Pembeli, Sales Dealer  
+**Aktor Pendukung:** Sistem Pricing Engine, API Samsat/SIGNAL  
+
+**Deskripsi Singkat:**  
+Use case ini memungkinkan pembeli atau sales dealer untuk mendapatkan estimasi harga on-the-road secara real-time dengan kalkulasi pajak dan retribusi yang akurat sesuai regulasi Indonesia.
+
+**Prakondisi:**
+1. Pengguna berhasil login ke sistem
+2. Data kendaraan (tipe, merk, model, tahun) tersedia di database
+3. Koneksi internet stabil
+
+**Pascakondisi (Sukses):**
+1. Sistem menampilkan rincian harga lengkap breakdown on-the-road
+2. Sistem menyimpan history simulasi ke log
+3. Pembeli dapat melanjutkan ke tahap booking
+
+**Pascakondisi (Gagal):**
+1. Sistem menampilkan pesan error dan saran perbaikan
+2. Log error tersimpan untuk debugging
+
+**Alur Normal (Basic Flow):**
+
+| Step | Aktor | Sistem | Deskripsi |
+|------|-------|--------|----------|
+| 1 | Pembeli | | Memilih menu "Simulasi Harga" |
+| 2 | | Sistem | Menampilkan form input: Jenis kendaraan (Baru/Bekas), Tipe, Merk, Model, Tahun |
+| 3 | Pembeli | | Mengisi data kendaraan dan memilih metode pembayaran (Tunai/Kredit) |
+| 4 | | Sistem | Meng-query database untuk mengambil NJKB dan harga dasar |
+| 5 | | Sistem | Jika kendaraan Bekas: Query API Samsat untuk validasi dan deteksi pajak progresif |
+| 6 | | Sistem | Hitung DPP PPN = 11/12 × NJKB |
+| 7 | | Sistem | Hitung PPN = 12% × DPP PPN |
+| 8 | | Sistem | Hitung PKB Pokok = Tarif × NJKB |
+| 9 | | Sistem | Hitung Opsen PKB = 66% × PKB Pokok |
+| 10 | | Sistem | Hitung BBNKB Pokok = 12% × NJKB |
+| 11 | | Sistem | Hitung Opsen BBNKB = 66% × BBNKB Pokok |
+| 12 | | Sistem | Hitung SWDKLLJ, PNBP STNK, TNKB, BPKB |
+| 13 | | Sistem | Jika metode Kredit: Hitung DP minimum berdasarkan NPF leasing dan angsuran |
+| 14 | | Sistem | Aggregate seluruh komponen dan tampilkan rincian harga |
+| 15 | Pembeli | | Menerima estimasi harga |
+| 16 | | Sistem | Simpan simulasi ke history database |
+
+**Alur Alternatif / Pengecualian (Alternative/Exception Flows):**
+
+**A1. API Samsat Timeout/Down**
+| Step | Aksi |
+|------|------|
+| 5a | Sistem gagal koneksi ke API Samsat |
+| 5b | Sistem menampilkan: "Verifikasi data kendaraan sementara unavailable. Estimasi pajak progresif menggunakan tarif dasar (2%). Validasi final akan dilakukan saat pembayaran." |
+| 5c | Sistem tetap melanjutkan kalkulasi dengan tarif default |
+| 5d | Kembali ke Step 6 |
+
+**A2. Kendaraan KBLBB (Insentif PPN DTP)**
+| Step | Aksi |
+|------|------|
+| 7a | Sistem mendeteksi TKDN ≥ 40% dan jenis = BEV |
+| 7b | Sistem menghitung PPN efektif = 2% × NJKB (bukan 11%) |
+| 7c | Sistem menampilkan badge "Mendapat insentif PPN DTP" |
+| 7d | Kembali ke Step 8 |
+
+**A3. Pajak Progresif Terdeteksi**
+| Step | Aksi |
+|------|------|
+| 5c | API Samsat mengembalikan: kepemilikan kendaraan sejenis = 2 |
+| 5d | Sistem set tarif PKB = 3% (bukan 2%) |
+| 5e | Sistem tampilkan notifikasi: "Berdasarkan data Samsat, Anda memiliki 1 kendaraan sejenis. Tarif PKB berlaku: 3%." |
+| 5f | Kembali ke Step 6 |
+
+**A4. Validasi Input Gagal**
+| Step | Aksi |
+|------|------|
+| 3a | Pembeli memilih kombinasi kendaraan yang tidak valid |
+| 3b | Sistem tampilkan pesan error spesifik |
+| 3c | Kembali ke Step 3 |
+
+---
+
+##### UC-03: Pengajuan Kredit (SLIK OJK & Scoring)
+
+**ID Use Case:** UC-03  
+**Nama:** Pengajuan Kredit (SLIK OJK & Credit Scoring)  
+**Aktor Utama:** Pembeli, Surveyor Leasing  
+**Aktor Pendukung:** Sistem Fintech, API SLIK OJK, API PEFINDO  
+
+**Deskripsi Singkat:**  
+Use case ini memungkinkan pembeli untuk mengajukan pembiayaan kredit melalui sistem yang terintegrasi dengan leasing partner. Sistem akan mengambil data riwayat kredit dari SLIK OJK, melakukan scoring otomatis, dan mengelola submission via ESB Asynchronous.
+
+**Prakondisi:**
+1. Pembeli telah完成 verifikasi identitas (face matching ≥ 85%)
+2. Kendaraan yang dipilih telah mencapai status BOOKED
+3. Leasing partner aktif dan ESB dalam kondisi healthy
+
+**Pascakondisi (Sukses):**
+1. Aplikasi kredit masuk status PENDING
+2. Submission ID tergenerate
+3. Data iDeb tersimpan dan siap dianalisis
+4. Notifikasi terkirim ke surveyor
+
+**Pascakondisi (Gagal):**
+1. Aplikasi kredit tidak tersimpan
+2. Error message ditampilkan dengan saran perbaikan
+3. Log untuk troubleshooting tersimpan
+
+**Alur Normal (Basic Flow):**
+
+| Step | Aktor | Sistem | Deskripsi |
+|------|-------|--------|----------|
+| 1 | Pembeli | | Memilih menu "Ajukan Kredit" pada kendaraan booking |
+| 2 | | Sistem | Menampilkan form pengajuan: Pilihan leasing partner, tenor, DP |
+| 3 | Pembeli | | Memilih leasing partner dan mengisi parameter kredit |
+| 4 | | Sistem | Hitung DP minimum berdasarkan NPF leasing |
+| 5 | | Sistem | Hitung angsuran dan tampilkan simulasi |
+| 6 | Pembeli | | Konfirmasi parameter dan klik "Ajukan" |
+| 7 | | Sistem | Generate submission ID |
+| 8 | | Sistem | Request API SLIK OJK dengan NIK pembeli |
+| 9 | | Sistem | Parse response iDeb dan extract kolektibilitas |
+| 10 | | Sistem | Jika SLIK data insufficient: Request API PEFINDO |
+| 11 | | Sistem | Jalankan credit scoring algorithm |
+| 12 | | Sistem | Generate preliminary decision (Approve/Reject/Pending Review) |
+| 13 | | Sistem | Serialize payload aplikasi kredit |
+| 14 | | Sistem | Publish ke message queue ESB (RabbitMQ/Kafka) |
+| 15 | | Sistem | Receive ACK dari ESB |
+| 16 | | Sistem | Save aplikasi ke database dengan status PENDING |
+| 17 | | Sistem | Send notification ke Surveyor |
+| 18 | | Sistem | Display confirmation ke pembeli |
+
+**Alur Alternatif / Pengecualian (Alternative/Exception Flows):**
+
+**A1. API SLIK Timeout/Down**
+| Step | Aksi |
+|------|------|
+| 8a | Koneksi timeout setelah 30 detik |
+| 8b | Sistem retry dengan exponential backoff (1s, 2s, 4s) |
+| 8c | Jika masih gagal setelah 3 retry: |
+| 8d | Sistem tidak blocking submission |
+| 8e | Sistem flag aplikasi sebagai "Pending iDeb Verification" |
+| 8f | Sistem schedule background job untuk retry later |
+| 8g | Lanjut ke Step 11 dengan null data iDeb |
+
+**A2. Credit Scoring Automatic Rejection**
+| Step | Aksi |
+|------|------|
+| 11a | Kolektibilitas = 5 (macet) |
+| 11b | Sistem set preliminary decision = REJECTED |
+| 11c | Sistem tidak publish ke ESB |
+| 11d | Sistem tampilkan alasan penolakan: "Kolektibilitas menunjukkan riwayat pembayaran tidak baik" |
+| 11e | Sistem offer opsi: "Hubungi surveyor untuk review manual" |
+| 11f | End use case |
+
+**A3. ESB Queue Full / Connection Failed**
+| Step | Aksi |
+|------|------|
+| 14a | Gagal publish ke queue setelah 3 retry |
+| 14b | Sistem simpan aplikasi dengan status "QUEUED_LOCALLY" |
+| 14c | Sistem schedule job untuk retry publish |
+| 14d | Sistem tampilkan: "Pengajuan berhasil disimpan. Penyerahan ke leasing akan diproses saat sistem tersedia." |
+| 14e | Lanjut ke Step 16 |
+
+**A4. Duplicate Submission Prevention**
+| Step | Aksi |
+|------|------|
+| 2a | Sistem deteksi NIK + kendaraan_id sudah ada aplikasi PENDING/APPROVED |
+| 2b | Sistem tampilkan: "Anda sudah memiliki pengajuan aktif untuk kendaraan ini." |
+| 2c | Sistem offer opsi: "Lihat pengajuan existing" atau "Ajukan dengan kendaraan berbeda" |
+| 2d | End use case |
+
+---
+
+##### UC-09: Pendaftaran Jaminan Fidusia oleh Notaris Rekanan
+
+**ID Use Case:** UC-09  
+**Nama:** Pendaftaran Jaminan Fidusia oleh Notaris Rekanan  
+**Aktor Utama:** Notaris, Leasing Partner  
+**Aktor Pendukung:** Sistem Fintech, API Ditjen AHU  
+
+**Deskripsi Singkat:**  
+Use case ini memungkinkan notaris rekanan untuk mengelola proses pendaftaran jaminan fidusia secara elektronik ke Ditjen AHU Kemenkumham setelah aplikasi kredit disetujui. Sistem akan memonitor batas waktu 30 hari kalender dan enforce auto-blocking jika deadline tercapai.
+
+**Prakondisi:**
+1. Aplikasi kredit telah mencapai status APPROVED
+2. Dokumen pendukung (kontrak, faktur) telah ter-upload dan valid
+3. Notaris telah memiliki SIP aktif dan terintegrasi dengan sistem
+
+**Pascakondisi (Sukses):**
+1. Sertifikat fidusia berhasil terdaftar di Ditjen AHU
+2. Aplikasi kredit berubah status menjadi FIDUSIA_COMPLETE
+3. Notifikasi terkirim ke leasing dan dealer
+
+**Pascakondisi (Gagal):**
+1. Pendaftaran gagal dan harus diulang
+2. Warning notification jika deadline < 7 hari
+3. Auto-blocking jika deadline passed
+
+**Alur Normal (Basic Flow):**
+
+| Step | Aktor | Sistem | Deskripsi |
+|------|-------|--------|----------|
+| 1 | Notaris | | Login ke portal notaris |
+| 2 | | Sistem | Tampilkan dashboard fidusia pending |
+| 3 | Notaris | | Pilih aplikasi kredit yang akan diproses |
+| 4 | | Sistem | Generate draft akta fidusia dari template |
+| 5 | Notaris | | Review dan finalize draft akta |
+| 6 | | Sistem | Generate nomor akta dan set tanggal_akta = today |
+| 7 | | Sistem | Calculate batas_pendaftaran = tanggal_akta + 30 hari |
+| 8 | | Sistem | Generate countdown warning schedule (H-25, H-28, H-29) |
+| 9 | Notaris | | Sign akta secara elektronik (via TTE Privy/VIDA) |
+| 10 | | Sistem | Store signed akta ke document vault |
+| 11 | Notaris | | Submit pendaftaran ke API Ditjen AHU |
+| 12 | | Sistem | Generate kode billing PNBP |
+| 13 | | Sistem | Display instruksi pembayaran ke notaris |
+| 14 | Notaris | | Lakukan pembayaran PNBP via payment gateway |
+| 15 | | Sistem | Confirm payment dan update status_bayar = PAID |
+| 16 | | Sistem | AHU memproses dan return status |
+| 17 | | Sistem | Jika APPROVED: Download sertifikat fidusia |
+| 18 | | Sistem | Store sertifikat ke document vault |
+| 19 | | Sistem | Update status fidusia = APPROVED |
+| 20 | | Sistem | Update status aplikasi_kredit = FIDUSIA_COMPLETE |
+| 21 | | Sistem | Send notification ke leasing dan dealer |
+| 22 | | Sistem | Trigger pencairan dana ke dealer |
+
+**Alur Alternatif / Pengecualian (Alternative/Exception Flows):**
+
+**A1. Countdown Warning - H-25 (7 Hari Sebelum Deadline)**
+| Step | Aksi |
+|------|------|
+| 8a | Sistem deteksi today = H-25 dari batas_pendaftaran |
+| 8b | Sistem kirim email/WhatsApp warning ke notaris |
+| 8c | Pesan: "Pendaftaran fidusia untuk aplikasi [ID] akan expire dalam 7 hari. Segera selesaikan proses." |
+| 8d | Lanjut ke Step 9 |
+
+**A2. Countdown Warning - H-28 (2 Hari Sebelum Deadline)**
+| Step | Aksi |
+|------|------|
+| 8a | Sistem deteksi today = H-28 dari batas_pendaftaran |
+| 8b | Sistem kirim urgent notification |
+| 8c | Pesan: "URGENT: Pendaftaran fidusia expire dalam 2 hari! Mohon segera selesaikan." |
+| 8d | Sistem escalate ke account manager leasing |
+| 8e | Lanjut ke Step 9 |
+
+**A3. Countdown Warning - H-29 (1 Hari Sebelum Deadline)**
+| Step | Aksi |
+|------|------|
+| 8a | Sistem deteksi today = H-29 dari batas_pendaftaran |
+| 8b | Sistem blokir notaris dari menangani aplikasi lain |
+| 8c | Sistem kirim critical alert ke seluruh stakeholder |
+| 8d | Pesan: "CRITICAL: Pendaftaran fidusia expire BESOK! Segera selesaikan atau aplikasi akan kadaluarsa." |
+| 8e | Lanjut ke Step 9 |
+
+**A4. Deadline Exceeded - Auto-Blocking**
+| Step | Aksi |
+|------|------|
+| 10a | Notaris mencoba submit setelah batas_pendaftaran |
+| 10b | Sistem cek: today > batas_pendaftaran |
+| 10c | Sistem BLOCK submission |
+| 10d | Sistem tampilkan: "Pendaftaran fidusia tidak dapat dilakukan. Batas waktu 30 hari kalender telah terlewat sesuai PP 21/2015." |
+| 10e | Sistem set status fidusia = EXPIRED |
+| 10f | Sistem notify leasing: aplikasi kredit perlu di-cancel atau ajukan ulang |
+| 10g | End use case |
+
+**A5. AHU Rejection (Dokumen Tidak Lengkap)**
+| Step | Aksi |
+|------|------|
+| 16a | AHU return status REJECTED dengan reason |
+| 16b | Sistem update status fidusia = REJECTED |
+| 16c | Sistem display reason rejection ke notaris |
+| 16d | Notaris memperbaiki dokumen sesuai reason |
+| 16e | Notaris resubmit (kembali ke Step 11) |
+| 16f | Jika resubmit setelah deadline: trigger A4 |
+
+**A6. Payment Timeout**
+| Step | Aksi |
+|------|------|
+| 14a | Pembayaran tidak confirmed dalam 24 jam |
+| 14b | Sistem kirim reminder ke notaris |
+| 14c | Jika tidak ada action dalam 48 jam: |
+| 14d | Sistem cancel kode billing dan generate new |
+| 14e | Notaris harus generate ulang di Step 12 |
+| 14f | Kode billing lama expire secara otomatis oleh sistem AHU |
+
+---
+
 #### 2.3 Karakteristik Pengguna (User Classes)
 
 6 user classes telah terdefinisi dengan kebutuhan khusus (REQ-F-001 hingga REQ-F-006).
@@ -200,6 +558,185 @@ Sistem shall menerapkan panduan UI/UX konsisten dengan indikator status warna se
 | Warning/Peringatan | Kuning | `#F59E0B` | Perlu perhatian,接近 deadline |
 | Info/Neutral | Biru Tua | `#1E40AF` | Informasi umum |
 
+#### 3.0.2 Kamus Data (Data Dictionary)
+
+Kamus data berikut mendefinisikan detail kolom untuk setiap entitas utama dalam sistem, termasuk tipe data, constraints, dan deskripsi fungsional.
+
+##### A. Entitas: Pembeli
+
+| Nama Field | Tipe Data | Constraints | Deskripsi / Keterangan |
+|------------|-----------|------------|------------------------|
+| `id` | UUID | PK, NOT NULL | Primary key unik untuk setiap pembeli |
+| `nik` | VARCHAR(16) | UK, NOT NULL | Nomor Induk Kependudukan 16 digit |
+| `nama_lengkap` | VARCHAR(255) | NOT NULL | Nama lengkap sesuai KTP |
+| `tanggal_lahir` | DATE | NOT NULL | Tanggal lahir format YYYY-MM-DD |
+| `alamat` | TEXT | NOT NULL | Alamat lengkap sesuai KTP |
+| `nomor_hp` | VARCHAR(15) | NOT NULL | Nomor telepon aktif dengan kode negara |
+| `email` | VARCHAR(255) | NOT NULL | Alamat email aktif |
+| `role` | ENUM | NOT NULL | 'PERSONAL' atau 'BADAN_HUKUM' |
+| `password_hash` | VARCHAR(255) | NOT NULL | Hash password dengan bcrypt/argon2 |
+| `foto_ktp_path` | VARCHAR(512) | NULL | Path file foto KTP terenkripsi |
+| `foto_selfie_path` | VARCHAR(512) | NULL | Path file swafoto untuk face matching |
+| `face_match_score` | DECIMAL(5,2) | NULL | Skor kecocokan wajah (0.00-100.00) |
+| `is_verified` | BOOLEAN | DEFAULT FALSE | Status verifikasi identitas |
+| `created_at` | TIMESTAMP | NOT NULL | Timestamp pembuatan record |
+| `updated_at` | TIMESTAMP | NOT NULL | Timestamp update terakhir |
+| `deleted_at` | TIMESTAMP | NULL | Soft delete flag |
+
+##### B. Entitas: Kendaraan
+
+| Nama Field | Tipe Data | Constraints | Deskripsi / Keterangan |
+|------------|-----------|------------|------------------------|
+| `id` | UUID | PK, NOT NULL | Primary key unik untuk setiap kendaraan |
+| `nomor_rangka` | VARCHAR(17) | UK, NOT NULL | Vehicle Identification Number (VIN) 17 karakter |
+| `nomor_mesin` | VARCHAR(20) | UK, NOT NULL | Nomor mesin kendaraan |
+| `nomor_polisi` | VARCHAR(12) | NULL | Nomor registrasi kendaraan (NRKB) |
+| `jenis` | ENUM | NOT NULL | 'BARU' atau 'BEKAS' |
+| `tipe` | ENUM | NOT NULL | 'SEDAN', 'SUV', 'MPV', 'PICKUP', 'HATCHBACK' |
+| `merk` | VARCHAR(100) | NOT NULL | Merek kendaraan (Toyota, Honda, dll) |
+| `model` | VARCHAR(100) | NOT NULL | Model kendaraan (Avanza, CR-V, dll) |
+| `tahun` | INTEGER | NOT NULL | Tahun pembuatan |
+| `warna` | VARCHAR(50) | NOT NULL | Warna bodi kendaraan |
+| `harga_dasar` | DECIMAL(15,2) | NOT NULL | Harga OTR sebelum pajak |
+| `njkb` | DECIMAL(15,2) | NOT NULL | Nilai Jual Kendaraan Bermotor |
+| `tarif_pkb` | DECIMAL(5,4) | NOT NULL | Tarif PKB desimal (0.02 = 2%) |
+| `koefisien_road` | DECIMAL(3,2) | DEFAULT 1.0 | Koefisien kerusakan jalan |
+| `tkdn_persen` | DECIMAL(5,2) | NULL | Persentase TKDN (untuk KBLBB) |
+| `is_kblbb` | BOOLEAN | DEFAULT FALSE | Flag kendaraan listrik/hybrid |
+| `pembeli_id` | UUID | FK → Pembeli(id), NULL | Referensi ke pembeli |
+| `status` | ENUM | NOT NULL | 'DRAFT', 'BOOKED', 'VERIFIED', 'PAID', 'DELIVERED' |
+| `created_at` | TIMESTAMP | NOT NULL | Timestamp pembuatan record |
+| `updated_at` | TIMESTAMP | NOT NULL | Timestamp update terakhir |
+| `deleted_at` | TIMESTAMP | NULL | Soft delete flag |
+
+##### C. Entitas: DokumenLegalitas
+
+| Nama Field | Tipe Data | Constraints | Deskripsi / Keterangan |
+|------------|-----------|------------|------------------------|
+| `id` | UUID | PK, NOT NULL | Primary key unik |
+| `pembeli_id` | UUID | FK → Pembeli(id), NOT NULL | Referensi ke pembeli |
+| `kendaraan_id` | UUID | FK → Kendaraan(id), NOT NULL | Referensi ke kendaraan |
+| `jenis` | ENUM | NOT NULL | 'KTP', 'KK', 'NPWP', 'BPKB', 'STNK', 'FAKTUR', 'KWITANSI', 'SPH', 'SURAT_PELUNASAN', 'FORM_A' |
+| `file_path` | VARCHAR(512) | NOT NULL | Path file dokumen terenkripsi |
+| `file_hash` | VARCHAR(64) | NOT NULL | SHA-256 hash untuk integritas |
+| `mime_type` | VARCHAR(100) | NOT NULL | MIME type file (application/pdf, image/jpeg) |
+| `file_size` | INTEGER | NOT NULL | Ukuran file dalam bytes |
+| `is_verified` | BOOLEAN | DEFAULT FALSE | Status verifikasi dokumen |
+| `verification_notes` | TEXT | NULL | Catatan hasil verifikasi |
+| `verified_by` | UUID | NULL | Admin yang memverifikasi |
+| `uploaded_at` | TIMESTAMP | NOT NULL | Timestamp upload |
+| `verified_at` | TIMESTAMP | NULL | Timestamp verifikasi |
+| `expires_at` | TIMESTAMP | NULL | Tanggal kadaluarsa dokumen (jika ada) |
+| `deleted_at` | TIMESTAMP | NULL | Soft delete flag |
+
+##### D. Entitas: AplikasiKredit
+
+| Nama Field | Tipe Data | Constraints | Deskripsi / Keterangan |
+|------------|-----------|------------|------------------------|
+| `id` | UUID | PK, NOT NULL | Primary key unik |
+| `submission_id` | VARCHAR(50) | UK, NOT NULL | ID submission ke leasing (ESB) |
+| `pembeli_id` | UUID | FK → Pembeli(id), NOT NULL | Referensi ke pembeli |
+| `kendaraan_id` | UUID | FK → Kendaraan(id), NOT NULL | Referensi ke kendaraan |
+| `jumlah_pinjaman` | DECIMAL(15,2) | NOT NULL | Total pokok pinjaman |
+| `dp_amount` | DECIMAL(15,2) | NOT NULL | Jumlah uang muka |
+| `dp_persen` | DECIMAL(5,2) | NOT NULL | Persentase DP |
+| `tenor_bulan` | INTEGER | NOT NULL | Jangka waktu tenor (12-72) |
+| `bunga_tahunan` | DECIMAL(5,4) | NOT NULL | Suku bunga tahunan desimal |
+| `angsuran_bulanan` | DECIMAL(15,2) | NOT NULL | Besaran cicilan per bulan |
+| `total_bunga` | DECIMAL(15,2) | NOT NULL | Total bunga selama tenor |
+| `total_pembayaran` | DECIMAL(15,2) | NOT NULL | Total seluruh pembayaran |
+| `leasing_id` | UUID | FK → Leasing(id), NOT NULL | Leasing partner |
+| `notaris_id` | UUID | FK → Notaris(id), NULL | Notaris yang menangani |
+| `status` | ENUM | NOT NULL | 'PENDING', 'APPROVED', 'REJECTED', 'DOCUMENTED', 'FIDUSIA_COMPLETE' |
+| `rejection_reason` | TEXT | NULL | Alasan penolakan jika rejected |
+| `ideb_data` | JSONB | NULL | Raw data iDeb dari SLIK |
+| `credit_score` | INTEGER | NULL | Skor kredit hasil analisis |
+| `created_at` | TIMESTAMP | NOT NULL | Timestamp submission |
+| `approved_at` | TIMESTAMP | NULL | Timestamp persetujuan |
+| `rejected_at` | TIMESTAMP | NULL | Timestamp penolakan |
+| `documented_at` | TIMESTAMP | NULL | Timestamp kelengkapan dokumen |
+| `fidusia_complete_at` | TIMESTAMP | NULL | Timestamp fidusia selesai |
+| `deleted_at` | TIMESTAMP | NULL | Soft delete flag |
+
+##### E. Entitas: SertifikatFidusia
+
+| Nama Field | Tipe Data | Constraints | Deskripsi / Keterangan |
+|------------|-----------|------------|------------------------|
+| `id` | UUID | PK, NOT NULL | Primary key unik |
+| `aplikasi_kredit_id` | UUID | FK → AplikasiKredit(id), NOT NULL | Referensi ke aplikasi kredit |
+| `notaris_id` | UUID | FK → Notaris(id), NOT NULL | Notaris yang membuat akta |
+| `nomor_sertifikat` | VARCHAR(50) | UK, NOT NULL | Nomor sertifikat dari Ditjen AHU |
+| `nomor_akta` | VARCHAR(50) | NOT NULL | Nomor akta notaris |
+| `tanggal_akta` | DATE | NOT NULL | Tanggal pembuatan akta |
+| `batas_pendaftaran` | DATE | NOT NULL | Batas akhir pendaftaran (tanggal_akta + 30 hari) |
+| `nilai_penjaminan` | DECIMAL(15,2) | NOT NULL | Nilai objek fidusia |
+| `is_online_registered` | BOOLEAN | DEFAULT FALSE | Status pendaftaran online |
+| `tanggal_pendaftaran_ahu` | DATE | NULL | Tanggal registrasi di Ditjen AHU |
+| `kode_billing` | VARCHAR(50) | NULL | Kode billing PNBP |
+| `jumlah_pnrp` | DECIMAL(15,2) | NULL | Jumlah PNBP yang dibayar |
+| `status_bayar` | ENUM | DEFAULT 'PENDING' | 'PENDING', 'PAID', 'EXPIRED' |
+| `status` | ENUM | NOT NULL | 'DRAFT', 'SUBMITTED', 'APPROVED', 'REJECTED', 'EXPIRED' |
+| `sertifikat_file_path` | VARCHAR(512) | NULL | Path file sertifikat PDF |
+| `created_at` | TIMESTAMP | NOT NULL | Timestamp pembuatan |
+| `updated_at` | TIMESTAMP | NOT NULL | Timestamp update |
+| `deleted_at` | TIMESTAMP | NULL | Soft delete flag |
+
+##### F. Entitas: Notaris
+
+| Nama Field | Tipe Data | Constraints | Deskripsi / Keterangan |
+|------------|-----------|------------|------------------------|
+| `id` | UUID | PK, NOT NULL | Primary key unik |
+| `nama` | VARCHAR(255) | NOT NULL | Nama lengkap notaris |
+| `sip_notaris` | VARCHAR(50) | UK, NOT NULL | Surat Izin Practic notaris |
+| `npwp` | VARCHAR(15) | NULL | NPWP notaris |
+| `alamat_kantor` | TEXT | NOT NULL | Alamat kantor notaris |
+| `nomor_hp` | VARCHAR(15) | NOT NULL | Nomor telepon kantor |
+| `email` | VARCHAR(255) | NOT NULL | Email kantor |
+| `provinsi` | VARCHAR(100) | NOT NULL | Provinsi domisili |
+| `kota` | VARCHAR(100) | NOT NULL | Kota domisili |
+| `is_active` | BOOLEAN | DEFAULT TRUE | Status keaktifan mitra |
+| `rating` | DECIMAL(2,1) | NULL | Rating performa (1.0-5.0) |
+| `total_fidusia` | INTEGER | DEFAULT 0 | Total fidusia yang ditangani |
+| `created_at` | TIMESTAMP | NOT NULL | Timestamp registrasi |
+| `updated_at` | TIMESTAMP | NOT NULL | Timestamp update |
+| `deleted_at` | TIMESTAMP | NULL | Soft delete flag |
+
+##### G. Entitas: PDI_Report
+
+| Nama Field | Tipe Data | Constraints | Deskripsi / Keterangan |
+|------------|-----------|------------|------------------------|
+| `id` | UUID | PK, NOT NULL | Primary key unik |
+| `kendaraan_id` | UUID | FK → Kendaraan(id), NOT NULL | Referensi ke kendaraan |
+| `teknisi_id` | UUID | FK → Teknisi(id), NOT NULL | Teknisi yang inspection |
+| `supervisor_id` | UUID | FK → Teknisi(id), NULL | Supervisor yang approve |
+| `dealer_id` | UUID | FK → Dealer(id), NOT NULL | Diler lokasi inspection |
+| `dewaxing_passed` | BOOLEAN | DEFAULT FALSE | Checklist de-waxing bodi |
+| `dewaxing_notes` | TEXT | NULL | Catatan de-waxing |
+| `fuse_installed` | BOOLEAN | DEFAULT FALSE | Checklist backup fuse |
+| `fuse_type` | VARCHAR(50) | NULL | Tipe fuse yang terpasang |
+| `obd_scan_passed` | BOOLEAN | DEFAULT FALSE | Checklist scan OBD-II |
+| `dtc_count` | INTEGER | DEFAULT 0 | Jumlah DTC error found |
+| `dtc_codes` | JSONB | NULL | Array kode DTC |
+| `fluid_check_passed` | BOOLEAN | DEFAULT FALSE | Checklist cairan |
+| `fluid_notes` | JSONB | NULL | Detail level setiap cairan |
+| `gps_start_lat` | DECIMAL(10,8) | NULL | Latitude awal uji jalan |
+| `gps_start_lng` | DECIMAL(11,8) | NULL | Longitude awal uji jalan |
+| `gps_end_lat` | DECIMAL(10,8) | NULL | Latitude akhir uji jalan |
+| `gps_end_lng` | DECIMAL(11,8) | NULL | Longitude akhir uji jalan |
+| `gps_distance_km` | DECIMAL(8,3) | NULL | Total jarak uji jalan dalam km |
+| `uji_jalan_passed` | BOOLEAN | DEFAULT FALSE | Checklist uji jalan |
+| `uji_jalan_notes` | TEXT | NULL | Catatan kondisi selama uji jalan |
+| `overall_passed` | BOOLEAN | DEFAULT FALSE | Status keseluruhan PDI |
+| `rejection_reason` | TEXT | NULL | Alasan penolakan jika failed |
+| `document_path` | VARCHAR(512) | NULL | Path laporan PDF |
+| `teknisi_signature_path` | VARCHAR(512) | NULL | Path signature teknisi |
+| `supervisor_signature_path` | VARCHAR(512) | NULL | Path signature supervisor |
+| `inspection_start_at` | TIMESTAMP | NOT NULL | Timestamp mulai inspection |
+| `inspection_end_at` | TIMESTAMP | NULL | Timestamp selesai inspection |
+| `approved_at` | TIMESTAMP | NULL | Timestamp approval supervisor |
+| `created_at` | TIMESTAMP | NOT NULL | Timestamp pembuatan record |
+| `updated_at` | TIMESTAMP | NOT NULL | Timestamp update |
+| `deleted_at` | TIMESTAMP | NULL | Soft delete flag |
 
 #### 3.1 Kebutuhan Modul Pricing Engine (Kalkulasi Pajak)
 
@@ -207,7 +744,7 @@ Modul pricing engine shall menyediakan fitur kalkulasi harga komprehensif yang m
 
 **3.1.1 Kebutuhan Perhitungan PPN (Pajak Pertambahan Nilai)**
 
-**REQ-TAX-001: Perhitungan DPP PPN Nilai Lain**  
+**REQ-TAX-001: Perhitungan DPP PPN Nilai Lain** | **Prioritas: TINGGI**  
 Sistem shall menghitung Dasar Pengenaan Pajak (DPP) untuk PPN menggunakan mekanisme Nilai Lain dengan formula:
 
 ```
@@ -1564,9 +2101,9 @@ Seluruh kebutuhan dalam Bab 3 dan Bab 4 shall diverifikasi menggunakan empat met
 
 ## 5.2 Matriks Ketertelusuran Kebutuhan (Requirements Traceability Matrix - RTM)
 
-Matriks berikut memetakan Requirement ID dari Bab 3 dan Bab 4 ke Use Case ID (Bab 2), Metode Verifikasi, dan Acceptance Criteria spesifik.
+Matriks berikut memetakan Requirement ID dari Bab 3 dan Bab 4 ke Use Case ID (Bab 2), Metode Verifikasi, Prioritas, dan Acceptance Criteria spesifik.
 
-| Requirement ID | Nama Kebutuhan | Use Case ID | Metode Verifikasi | Acceptance Criteria |
+| Requirement ID | Nama Kebutuhan | Use Case ID | Metode Verifikasi | Prioritas | Acceptance Criteria |
 | --- | --- | --- | --- | --- |
 | REQ-TAX-001 | Perhitungan DPP PPN Nilai Lain | UC-01 | Analysis | Hasil hitung DPP PPN = 11/12 × NJKB tepat hingga 2 desimal |
 | REQ-TAX-002 | Perhitungan PPN Terutang (12%) | UC-01 | Test | PPN = 12% × DPP PPN menghasilkan nilai yang konsisten dengan manual calculator |
