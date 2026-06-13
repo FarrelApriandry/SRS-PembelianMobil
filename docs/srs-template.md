@@ -65,6 +65,142 @@ Batasan fungsional, teknis, dan regulatory telah terdefinisi.
 
 Bab ini menjabarkan seluruh kebutuhan fungsional sistem yang dikategorikan berdasarkan modul bisnis utama. Setiap kebutuhan shall memiliki ID unik, deskripsi lengkap, input/proses/output, prakondisi, pascakondisi, dan kriteria penerimaan (acceptance criteria) sesuai standar IEEE 29148.
 
+#### 3.0 Entity Relationship Diagram (ERD) Fisik
+
+Diagram ERD berikut memetakan entitas data utama sistem beserta relasi dan kardinalitasnya:
+
+```mermaid
+erDiagram
+    Pembeli ||--o{ Kendaraan : memesan
+    Pembeli ||--o{ DokumenLegalitas : mengunggah
+    Pembeli ||--o{ AplikasiKredit : mengajukan
+    AplikasiKredit ||--o| Notaris : menggunakan_jasa
+    AplikasiKredit ||--o| SertifikatFidusia : menghasilkan
+    AplikasiKredit ||--o{ PDI_Report : memerlukan
+    Kendaraan ||--o{ DokumenLegalitas : memiliki
+    Kendaraan ||--o| PDI_Report : melalui_inspeksi
+    
+    Pembeli {
+        uuid id PK
+        string nik UK
+        string nama_lengkap
+        date tanggal_lahir
+        string alamat
+        string nomor_hp
+        string email
+        enum role "PERSONAL|BADAN_HUKUM"
+        timestamp created_at
+    }
+    
+    Kendaraan {
+        uuid id PK
+        string nomor_rangka UK
+        string nomor_mesin UK
+        string nomor_polisi FK
+        enum jenis "BARU|BEKAS"
+        enum tipe "SEDAN|SUV|MPV|PICKUP"
+        decimal harga_dasar
+        decimal njkb
+        decimal tarif_pkb
+        decimal tarif_ppn
+        uuid pembeli_id FK
+        enum status "DRAFT|BOOKED|VERIFIED|PAID|DELIVERED"
+        timestamp created_at
+    }
+    
+    DokumenLegalitas {
+        uuid id PK
+        uuid pembeli_id FK
+        uuid kendaraan_id FK
+        enum jenis "KTP|KK|NPWP|BPKB|STNK|FAKTUR|KWITANSI|SPH|SURAT_PELUNASAN"
+        string file_path
+        boolean is_verified
+        timestamp uploaded_at
+        timestamp verified_at
+    }
+    
+    AplikasiKredit {
+        uuid id PK
+        uuid pembeli_id FK
+        uuid kendaraan_id FK
+        decimal jumlah_pinjaman
+        decimal dp_amount
+        integer tenor_bulan
+        decimal bunga_tahunan
+        enum status "PENDING|APPROVED|REJECTED|DOCUMENTED|FIDUSIA_COMPLETE"
+        uuid notaris_id FK
+        timestamp created_at
+        timestamp approved_at
+    }
+    
+    Notaris {
+        uuid id PK
+        string nama
+        string sip_notaris UK
+        string alamat
+        string nomor_hp
+        string email
+        boolean is_active
+    }
+    
+    SertifikatFidusia {
+        uuid id PK
+        uuid aplikasi_kredit_id FK
+        uuid notaris_id FK
+        string nomor_sertifikat UK
+        string nomor_akta
+        date tanggal_akta
+        date batas_pendaftaran
+        boolean is_online_registered
+        date tanggal_pendaftaran_ahu
+        string kode_billing
+        decimal pnrp_amount
+        enum status "DRAFT|SUBMITTED|APPROVED|REJECTED|EXPIRED"
+        timestamp created_at
+    }
+    
+    PDI_Report {
+        uuid id PK
+        uuid kendaraan_id FK
+        uuid teknisi_id FK
+        boolean dewaxing_passed
+        boolean fuse_installed
+        boolean obd_scan_passed
+        boolean fluid_check_passed
+        decimal gps_distance_km
+        boolean overall_passed
+        string document_path
+        timestamp inspection_at
+        timestamp approved_at
+    }
+```
+
+#### 3.0.1 Kardinalitas Relasi
+
+| Relasi | Entitas 1 | Entitas 2 | Kardinalitas | Penjelasan |
+|--------|-----------|-----------|--------------|------------|
+| memesan | Pembeli | Kendaraan | 1:N | Satu pembeli dapat memesan banyak kendaraan |
+| mengajukan | Pembeli | AplikasiKredit | 1:N | Satu pembeli dapat mengajukan banyak pengajuan |
+| memiliki | Kendaraan | DokumenLegalitas | 1:N | Satu kendaraan memiliki banyak dokumen legalitas |
+| menggunakan_jasa | AplikasiKredit | Notaris | N:1 | Banyak pengajuan kredit ditangani satu notaris |
+| menghasilkan | AplikasiKredit | SertifikatFidusia | 1:1 | Satu pengajuan kredit menghasilkan satu sertifikat fidusia |
+| memerlukan | AplikasiKredit | PDI_Report | 1:1 | Satu pengajuan kredit memerlukan satu laporan PDI |
+| melalui_inspeksi | Kendaraan | PDI_Report | 1:1 | Satu kendaraan harus melalui satu laporan PDI |
+
+#### 3.0 Panduan UI/UX Dasar & Indikator Status
+
+Sistem shall menerapkan panduan UI/UX konsisten dengan indikator status warna sebagai berikut:
+
+| Status | Warna | Hex Code | Penggunaan |
+|--------|-------|----------|-----------|
+| Draft/Pending | Abu-abu | `#6B7280` | Data belum final |
+| Verifikasi | Biru | `#3B82F6` | Sedang dalam proses validasi |
+| Approved/Lolos | Hijau | `#10B981` |通过了 verifikasi, siap lanjut |
+| Rejected/Tertolak | Merah | `#EF4444` | Ditolak, butuh revisi |
+| Warning/Peringatan | Kuning | `#F59E0B` | Perlu perhatian,接近 deadline |
+| Info/Neutral | Biru Tua | `#1E40AF` | Informasi umum |
+
+
 #### 3.1 Kebutuhan Modul Pricing Engine (Kalkulasi Pajak)
 
 Modul pricing engine shall menyediakan fitur kalkulasi harga komprehensif yang mencakup seluruh komponen pajak dan retribusi sesuai regulasi yang berlaku di Indonesia.

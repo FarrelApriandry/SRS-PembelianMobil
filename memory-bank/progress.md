@@ -15,6 +15,18 @@
 * [x] ~~Bab 4: Kebutuhan Non-Fungsional (Performa, Keamanan, Usabilitas, Ketersediaan)~~
 * [x] ~~Bab 5: Verifikasi & Traceability Matrix (Metode Pengujian, Matriks Ketertelusuran Kebutuhan)~~
 
+## Fase 3: Refinement & Pelengkapan Gaps (Rekomendasi Audit & Standardisasi)
+
+* [x] Perbaikan Perhitungan Pricing Engine DKI Jakarta (Bebas Opsen & Tarif Pokok BBNKB 12,5%)
+* [x] Penambahan Perhitungan PPN Kendaraan Bekas (Tarif Efektif PPN Besaran Tertentu 1,1% dari Harga Transaksi)
+* [x] Pembuatan Diagram ERD Fisik Menggunakan Mermaid UML pada Bab 3
+* [x] Penjabaran Detail Use Cases Utama (Pre/Post-conditions, Alur Normal & Alternatif untuk UC-03 & UC-09)
+* [x] Penulisan Spesifikasi Perangkat Keras Minimum (Uji Fisik Kamera 12MP AF untuk Verifikasi Biometrik & OCR)
+* [x] Penulisan Panduan UI/UX & Status Indicator di Bab 3
+* [x] Perbaikan Alur Kerja Pendaftaran Jaminan Fidusia Melalui Notaris Rekanan (Ditjen AHU)
+* [x] Penambahan Kolom Prioritas (Tinggi, Sedang, Rendah) pada Seluruh Tabel Requirements Bab 3 & 4
+* [x] Sinkronisasi Seluruh Perubahan di RTM Bab 5
+
 ## Catatan Progress
 
 | Milestone | Tanggal | Status |
@@ -24,25 +36,26 @@
 | Penulisan BAB 3 (Kebutuhan Spesifik) | 13 Juni 2026 | ✅ Selesai |
 | Penulisan BAB 4 (Non-Fungsional) | 13 Juni 2026 | ✅ Selesai |
 | Penulisan BAB 5 (Traceability) | 13 Juni 2026 | ✅ Selesai |
-| **PROYEK SRS LENGKAP** | 13 Juni 2026 | ✅ **SELESAI** |
+| Refinement & Pelengkapan Gaps (Fase 3) | - | ⏳ Pending |
+| **PROYEK SRS LENGKAP** | - | ⏳ Pending |
 
 ## Ringkasan Kebutuhan SRS
 
 | BAB | Kategori | Jumlah | ID Requirements |
 |-----|----------|--------|----------------|
-| BAB 3 | Pricing Engine | 16 | REQ-TAX-001 s/d REQ-TAX-016 |
+| BAB 3 | Pricing Engine | 17 | REQ-TAX-001 s/d REQ-TAX-017 |
 | BAB 3 | Verifikasi Dokumen | 14 | REQ-DOC-001 s/d REQ-DOC-014 |
 | BAB 3 | Fintech & Leasing | 10 | REQ-FINT-001 s/d REQ-FINT-010 |
 | BAB 3 | Logistik & PDI | 12 | REQ-LOG-001 s/d REQ-LOG-012 |
 | BAB 3 | Integrasi API | 5 | REQ-INT-001 s/d REQ-INT-005 |
-| **BAB 3 TOTAL** | | **47** | |
+| **BAB 3 TOTAL** | | **48** | |
 | BAB 4 | Performa | 3 | REQ-NF-001 s/d REQ-NF-003 |
 | BAB 4 | Keamanan | 4 | REQ-NF-004 s/d REQ-NF-007 |
 | BAB 4 | Keandalan | 2 | REQ-NF-008 s/d REQ-NF-009 |
 | BAB 4 | Usabilitas | 2 | REQ-NF-010 s/d REQ-NF-011 |
 | BAB 4 | Portabilitas | 1 | REQ-NF-012 |
 | **BAB 4 TOTAL** | | **12** | |
-| **GRAND TOTAL** | | **59** | |
+| **GRAND TOTAL** | | **60** | |
 
 ## Checklist Kualitas (IEEE 29148)
 
@@ -72,6 +85,6 @@
 - [x] BAB 5: CRUD Matrix (5.3)
 - [x] BAB 5: Kriteria Penerimaan Akhir & Deployment Checklist (5.4)
 
-## Status Akhir: PROYEK SRS LENGKAP ✅
+## Status Akhir: TAHAP REFINEMENT (FASE 3) ACTIVE ⏳
 
-Dokumen SRS siap untuk final review dan transisi ke fase development.
+Dokumen SRS masuk ke dalam tahap penyempurnaan gap analisis untuk standar audit profesional sebelum dinyatakan final development-ready.

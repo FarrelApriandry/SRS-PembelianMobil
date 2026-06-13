@@ -27,11 +27,22 @@ Sesuai UU HKPD, sistem wajib memisahkan nilai pajak pokok dengan nilai opsen sec
 
 $$\text{Opsen PKB}=66\%\times\text{PKB Pokok}$$
 
+> **⚠️ ATURAN KHUSUS DKI JAKARTA:**
+> Jika wilayah pendaftaran kendaraan adalah **DKI Jakarta**, maka:
+> - **Opsen PKB = Rp0** (tidak dikenakan karena Jakarta tidak memiliki wilayah kabupaten/kota otonom)
+> - **Opsen BBNKB = Rp0** (tidak dikenakan karena Jakarta tidak memiliki wilayah kabupaten/kota otonom)
+> - **Tarif Pokok BBNKB Penyerahan Pertama = 12,5%** (sesuai Perda DKI No. 1 Tahun 2024)
 
-* **Bea Balik Nama Kendaraan Bermotor (BBNKB):** Tarif maksimal penyerahan pertama adalah 12% dari NJKB.
-* **Opsen BBNKB:** Pungutan tambahan sebesar 66% dari nilai BBNKB Pokok terutang.
+* **Bea Balik Nama Kendaraan Bermotor (BBNKB):**
+  - Provinsi Lain: Tarif maksimal penyerahan pertama **12%** dari NJKB
+  - DKI Jakarta: Tarif maksimal penyerahan pertama **12,5%** dari NJKB (Perda DKI No. 1 Tahun 2024)
+* **Opsen BBNKB:**
+  - Provinsi Lain: Pungutan tambahan sebesar 66% dari nilai BBNKB Pokok
+  - DKI Jakarta: **Opsen BBNKB = Rp0**
 
-$$\text{Opsen BBNKB}=66\%\times\text{BBNKB Pokok}$$
+$$\text{Opsen BBNKB}=66\%\times\text{BBNKB Pokok (Provinsi Lain)}$$
+
+$$\text{Opsen BBNKB}=Rp0 \text{ (DKI Jakarta)}$$
 
 
 
