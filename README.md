@@ -48,7 +48,7 @@ SRS-PembelianMobil/
 
 ```
 SRS-PembelianMobil/
-├── .clinerules/                    # Aturan kerja AI Agent
+├── srs-rules/                     # Aturan kerja AI Agent
 │   ├── 01-srs-workflow.md         # Standar penulisan SRS (IEEE 29148, RFC 2119)
 │   ├── 02-indonesia-regulations.md # Aturan bisnis & regulasi hukum Indonesia
 │   └── 03-tech-integration.md     # Spesifikasi API & arsitektur ESB Async
