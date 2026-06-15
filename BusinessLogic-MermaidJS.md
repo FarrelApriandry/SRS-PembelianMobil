@@ -553,6 +553,114 @@ flowchart TD
 
 ---
 
+## 6. Entity Relationship Diagram (ERD) Fisik
+
+```mermaid
+erDiagram
+    Pembeli ||--o{ Kendaraan : memesan
+    Pembeli ||--o{ DokumenLegalitas : mengunggah
+    Pembeli ||--o{ AplikasiKredit : mengajukan
+    AplikasiKredit ||--o| Notaris : menggunakan_jasa
+    AplikasiKredit ||--o| SertifikatFidusia : menghasilkan
+    AplikasiKredit ||--o{ PDI_Report : memerlukan
+    Kendaraan ||--o{ DokumenLegalitas : memiliki
+    Kendaraan ||--o| PDI_Report : melalui_inspeksi
+    
+    Pembeli {
+        uuid id PK
+        string nik UK
+        string nama_lengkap
+        date tanggal_lahir
+        string alamat
+        string nomor_hp
+        string email
+        enum role "PERSONAL|BADAN_HUKUM"
+        timestamp created_at
+    }
+    
+    Kendaraan {
+        uuid id PK
+        string nomor_rangka UK
+        string nomor_mesin UK
+        string nomor_polisi FK
+        enum jenis "BARU|BEKAS"
+        enum tipe "SEDAN|SUV|MPV|PICKUP"
+        decimal harga_dasar
+        decimal njkb
+        decimal tarif_pkb
+        decimal tarif_ppn
+        uuid pembeli_id FK
+        enum status "DRAFT|BOOKED|VERIFIED|PAID|DELIVERED"
+        timestamp created_at
+    }
+    
+    DokumenLegalitas {
+        uuid id PK
+        uuid pembeli_id FK
+        uuid kendaraan_id FK
+        enum jenis "KTP|KK|NPWP|BPKB|STNK|FAKTUR|KWITANSI|SPH|SURAT_PELUNASAN"
+        string file_path
+        boolean is_verified
+        timestamp uploaded_at
+        timestamp verified_at
+    }
+    
+    AplikasiKredit {
+        uuid id PK
+        uuid pembeli_id FK
+        uuid kendaraan_id FK
+        decimal jumlah_pinjaman
+        decimal dp_amount
+        integer tenor_bulan
+        decimal bunga_tahunan
+        enum status "PENDING|APPROVED|REJECTED|DOCUMENTED|FIDUSIA_COMPLETE"
+        uuid notaris_id FK
+        timestamp created_at
+        timestamp approved_at
+    }
+    
+    Notaris {
+        uuid id PK
+        string nama
+        string sip_notaris UK
+        string alamat
+        string nomor_hp
+        string email
+        boolean is_active
+    }
+    
+    SertifikatFidusia {
+        uuid id PK
+        uuid aplikasi_kredit_id FK
+        uuid notaris_id FK
+        string nomor_sertifikat UK
+        string nomor_akta
+        date tanggal_akta
+        date batas_pendaftaran
+        boolean is_online_registered
+        date tanggal_pendaftaran_ahu
+        string kode_billing
+        decimal pnrp_amount
+        enum status "DRAFT|SUBMITTED|APPROVED|REJECTED|EXPIRED"
+        timestamp created_at
+    }
+    
+    PDI_Report {
+        uuid id PK
+        uuid kendaraan_id FK
+        uuid teknisi_id FK
+        boolean dewaxing_passed
+        boolean fuse_installed
+        boolean obd_scan_passed
+        boolean fluid_check_passed
+        decimal gps_distance_km
+        boolean overall_passed
+        string document_path
+        timestamp inspection_at
+        timestamp approved_at
+    }
+```
+
 *Document Version: 1.0*
 *Last Updated: Juni 2026*
 *References: IEEE 830 SRS, UU HKPD, PMK 131/2024, Perda DKI No. 1 Tahun 2024, PP 21/2015*
